@@ -1,0 +1,6 @@
+CONTASOL/
+__pycache__/
+*.pyc
+.env
+data/input/*
+data/output/*

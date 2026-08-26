@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TÍO PABLO | Conversor CONTASOL</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <main class="container">
+
+        <header class="header">
+            <h1>TÍO PABLO</h1>
+            <p>Conversor de Excel para CONTASOL</p>
+        </header>
+
+        <section class="card">
+
+            <div class="form-group">
+                <label for="client">Cliente</label>
+
+                <select id="client">
+                    <option value="">Selecciona un cliente</option>
+                    <option value="demo">Cliente de prueba</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Archivo Excel</label>
+
+                <div class="upload-area" id="uploadArea">
+
+                    <div class="upload-icon">↑</div>
+
+                    <p class="upload-title">
+                        Arrastra tu Excel aquí
+                    </p>
+
+                    <p class="upload-subtitle">
+                        o selecciona un archivo desde tu ordenador
+                    </p>
+
+                    <button type="button" id="selectFile">
+                        Seleccionar archivo
+                    </button>
+
+                    <input
+                        type="file"
+                        id="fileInput"
+                        accept=".xlsx,.xls"
+                        hidden
+                    >
+
+                    <p id="fileName" class="file-name"></p>
+
+                </div>
+            </div>
+
+            <button
+                type="button"
+                id="convertButton"
+                class="convert-button"
+                disabled
+            >
+                Convertir a CONTASOL
+            </button>
+
+            <div id="status" class="status hidden"></div>
+
+        </section>
+
+    </main>
+
+    <script src="js/app.js"></script>
+
+</body>
+</html>

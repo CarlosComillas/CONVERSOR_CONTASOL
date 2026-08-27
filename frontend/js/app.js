@@ -8,6 +8,38 @@ const status = document.getElementById("status");
 
 let selectedFile = null;
 
+async function loadClients() {
+    try {
+        const response = await fetch("/api/clients");
+
+        if (!response.ok) {
+            throw new Error("No se pudieron cargar los clientes.");
+        }
+
+        const data = await response.json();
+
+        clientSelect.innerHTML = `
+            <option value="">Selecciona un cliente</option>
+        `;
+
+        for (const client of data.clients) {
+            const option = document.createElement("option");
+
+            option.value = client.id;
+            option.textContent = client.name;
+
+            clientSelect.appendChild(option);
+        }
+
+    } catch (error) {
+        clientSelect.innerHTML = `
+            <option value="">Error al cargar clientes</option>
+        `;
+
+        console.error(error);
+    }
+}
+
 
 selectFileButton.addEventListener("click", () => {
     fileInput.click();
@@ -93,3 +125,5 @@ function showStatus(message, type) {
     status.classList.remove("hidden");
     status.textContent = message;
 }
+
+loadClients();

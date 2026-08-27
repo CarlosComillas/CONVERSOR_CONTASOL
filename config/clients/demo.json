@@ -4,7 +4,19 @@
     "conversions": [
         {
             "id": "test",
-            "name": "Conversión de prueba"
+            "name": "Conversión de prueba",
+            "mapping": {},
+            "transformations": {
+                "Y": {
+                    "round": 2
+                }
+            },
+            "validation": {
+                "required_fields": []
+            },
+            "output": {
+                "extension": ".xlsx"
+            }
         }
     ]
 }

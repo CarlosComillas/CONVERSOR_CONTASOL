@@ -5,6 +5,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 from backend.app.converter.excel_writer import ExcelWriter
+from backend.app.converter.mapper import ExcelMapper
+from backend.app.converter.transformer import DataTransformer
+from backend.app.converter.validator import DataValidator
 from backend.app.services.config_manager import ConfigManager
 
 
@@ -40,7 +43,7 @@ def convert_excel(
     # -------------------------------------------------
 
     try:
-        client = config_manager.load_client(client_id)
+        config_manager.load_client(client_id)
 
     except FileNotFoundError:
         raise HTTPException(
@@ -49,7 +52,7 @@ def convert_excel(
         )
 
     # -------------------------------------------------
-    # 2. Comprobar que existe la conversión
+    # 2. Cargar la conversión
     # -------------------------------------------------
 
     try:
@@ -96,11 +99,12 @@ def convert_excel(
 
     output_path = OUTPUT_DIR / output_filename
 
-    # -------------------------------------------------
-    # 5. Leer Excel
-    # -------------------------------------------------
-
     try:
+
+        # -------------------------------------------------
+        # 5. Leer Excel
+        # -------------------------------------------------
+
         dataframe = pd.read_excel(input_path)
 
         rows = dataframe.to_dict(
@@ -108,7 +112,7 @@ def convert_excel(
         )
 
         # -------------------------------------------------
-        # 6. Obtener mapping de la configuración
+        # 6. Obtener configuración
         # -------------------------------------------------
 
         mapping = conversion.get(
@@ -116,32 +120,85 @@ def convert_excel(
             {},
         )
 
+        validation_config = conversion.get(
+            "validation",
+            {},
+        )
+
+        required_fields = validation_config.get(
+            "required_fields",
+            [],
+        )
+
         # -------------------------------------------------
-        # 7. Aplicar el mapping
+        # 7. MAPEAR
         # -------------------------------------------------
 
-        from backend.app.converter.mapper import ExcelMapper
-
-        mapper = ExcelMapper(mapping)
+        mapper = ExcelMapper(
+            mapping=mapping
+        )
 
         mapped_rows = mapper.map_rows(rows)
 
         # -------------------------------------------------
-        # 8. Generar archivo
+        # 8. TRANSFORMAR
+        # -------------------------------------------------
+
+        transformations = conversion.get(
+            "transformations",
+            {},
+        )
+
+        transformer = DataTransformer(transformations=transformations)
+
+        transformed_rows = transformer.transform_rows(
+            mapped_rows
+        )
+
+        # -------------------------------------------------
+        # 9. VALIDAR
+        # -------------------------------------------------
+
+        validator = DataValidator(
+            required_fields=required_fields
+        )
+
+        validation_result = validator.validate_rows(
+            transformed_rows
+        )
+
+        if not validation_result["valid"]:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": "El Excel contiene errores de validación.",
+                    "validation": validation_result,
+                },
+            )
+
+        # -------------------------------------------------
+        # 10. GENERAR EXCEL
         # -------------------------------------------------
 
         writer = ExcelWriter()
 
         writer.write(
-            mapped_rows,
+            transformed_rows,
             output_path,
         )
+
+    except HTTPException:
+        raise
 
     except Exception as error:
         raise HTTPException(
             status_code=500,
             detail=f"Error durante la conversión: {error}",
         )
+
+    # -------------------------------------------------
+    # 11. Descargar resultado
+    # -------------------------------------------------
 
     return FileResponse(
         path=output_path,

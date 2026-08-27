@@ -1,4 +1,10 @@
 {
     "id": "demo",
-    "name": "Cliente de prueba"
+    "name": "Cliente de prueba",
+    "conversions": [
+        {
+            "id": "test",
+            "name": "Conversión de prueba"
+        }
+    ]
 }

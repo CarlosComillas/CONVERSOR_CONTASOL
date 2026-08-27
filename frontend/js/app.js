@@ -4,6 +4,7 @@ const uploadArea = document.getElementById("uploadArea");
 const fileName = document.getElementById("fileName");
 const convertButton = document.getElementById("convertButton");
 const clientSelect = document.getElementById("client");
+const conversionSelect = document.getElementById("conversion");
 const status = document.getElementById("status");
 const fileAnalysis = document.getElementById("fileAnalysis");
 const fileAnalysisStatus = document.getElementById("fileAnalysisStatus");
@@ -89,7 +90,31 @@ uploadArea.addEventListener("drop", (event) => {
 });
 
 
-clientSelect.addEventListener("change", updateButton);
+clientSelect.addEventListener("change", async () => {
+
+    const clientId = clientSelect.value;
+
+    if (!clientId) {
+
+        conversionSelect.innerHTML = `
+            <option value="">
+                Selecciona primero un cliente
+            </option>
+        `;
+        conversionSelect.disabled = true;
+
+        updateButton();
+
+        return;
+    }
+
+    await loadConversions(clientId);
+});
+
+conversionSelect.addEventListener(
+    "change",
+    updateButton
+);
 
 
 // ==============================
@@ -265,12 +290,21 @@ function showAnalysis(data) {
 
 function updateButton() {
 
-    const clientSelected = clientSelect.value !== "";
-    const fileSelected = selectedFile !== null;
-    const fileAnalyzed = excelAnalysis !== null;
+    const clientSelected =
+        clientSelect.value !== "";
+
+    const conversionSelected =
+        conversionSelect.value !== "";
+
+    const fileSelected =
+        selectedFile !== null;
+
+    const fileAnalyzed =
+        excelAnalysis !== null;
 
     convertButton.disabled = !(
         clientSelected &&
+        conversionSelected &&
         fileSelected &&
         fileAnalyzed
     );
@@ -328,8 +362,13 @@ convertButton.addEventListener("click", async () => {
         // 2. Convertir el archivo
         showStatus("Convirtiendo archivo...", "info");
 
+        const clientId = clientSelect.value;
+        const conversionId = conversionSelect.value;
+
         const convertResponse = await fetch(
-            `/api/convert?filename=${encodeURIComponent(uploadData.filename)}`,
+            `/api/convert?filename=${encodeURIComponent(uploadData.filename)}` +
+            `&client_id=${encodeURIComponent(clientId)}` +
+            `&conversion_id=${encodeURIComponent(conversionId)}`,
             {
                 method: "POST",
             }
@@ -379,3 +418,62 @@ convertButton.addEventListener("click", async () => {
 // ==============================
 
 loadClients();
+async function loadConversions(clientId) {
+    conversionSelect.innerHTML = `
+        <option value="">Cargando conversiones...</option>
+    `;
+
+    conversionSelect.disabled = true;
+
+    try {
+        const response = await fetch(
+            `/api/clients/${encodeURIComponent(clientId)}/conversions`
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "No se pudieron cargar las conversiones."
+            );
+        }
+
+        const data = await response.json();
+
+        conversionSelect.innerHTML = `
+            <option value="">Selecciona una conversión</option>
+        `;
+
+        for (const conversion of data.conversions) {
+            const option = document.createElement("option");
+
+            option.value = conversion.id;
+            option.textContent = conversion.name;
+
+            conversionSelect.appendChild(option);
+        }
+
+        conversionSelect.disabled =
+            data.conversions.length === 0;
+
+        if (data.conversions.length === 0) {
+            conversionSelect.innerHTML = `
+                <option value="">
+                    No hay conversiones configuradas
+                </option>
+            `;
+        }
+
+    } catch (error) {
+
+        conversionSelect.innerHTML = `
+            <option value="">
+                Error al cargar conversiones
+            </option>
+        `;
+
+        conversionSelect.disabled = true;
+
+        console.error(error);
+    }
+
+    updateButton();
+}

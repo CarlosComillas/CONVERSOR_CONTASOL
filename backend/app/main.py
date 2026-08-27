@@ -6,6 +6,10 @@ from backend.app.api.upload import router as upload_router
 
 from backend.app.services.config_manager import ConfigManager
 
+from backend.app.api.analyze import router as analyze_router
+from backend.app.api.upload import router as upload_router
+from backend.app.services.config_manager import ConfigManager
+
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -22,6 +26,10 @@ app = FastAPI(
 )
 
 app.include_router(upload_router)
+
+
+app.include_router(upload_router)
+app.include_router(analyze_router)
 
 
 @app.get("/api/health")

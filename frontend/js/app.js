@@ -5,8 +5,18 @@ const fileName = document.getElementById("fileName");
 const convertButton = document.getElementById("convertButton");
 const clientSelect = document.getElementById("client");
 const status = document.getElementById("status");
+const fileAnalysis = document.getElementById("fileAnalysis");
+const fileAnalysisStatus = document.getElementById("fileAnalysisStatus");
+const fileAnalysisDetails = document.getElementById("fileAnalysisDetails");
 
 let selectedFile = null;
+let uploadedFilename = null;
+let excelAnalysis = null;
+
+
+// ==============================
+// CLIENTES
+// ==============================
 
 async function loadClients() {
     try {
@@ -40,6 +50,10 @@ async function loadClients() {
     }
 }
 
+
+// ==============================
+// SELECCIÓN DE ARCHIVO
+// ==============================
 
 selectFileButton.addEventListener("click", () => {
     fileInput.click();
@@ -78,9 +92,13 @@ uploadArea.addEventListener("drop", (event) => {
 clientSelect.addEventListener("change", updateButton);
 
 
-function handleFile(file) {
+// ==============================
+// MANEJO DEL ARCHIVO
+// ==============================
 
-    const validExtensions = [".xlsx", ".xls"];
+async function handleFile(file) {
+
+    const validExtensions = [".xlsx"];
 
     const extension = file.name
         .substring(file.name.lastIndexOf("."))
@@ -88,7 +106,7 @@ function handleFile(file) {
 
     if (!validExtensions.includes(extension)) {
         showStatus(
-            "El archivo debe ser un Excel (.xlsx o .xls).",
+            "El archivo debe ser un Excel .xlsx.",
             "error"
         );
 
@@ -96,23 +114,172 @@ function handleFile(file) {
     }
 
     selectedFile = file;
+    uploadedFilename = null;
+    excelAnalysis = null;
 
     fileName.textContent = `Archivo seleccionado: ${file.name}`;
 
-    showStatus("", "");
-
     updateButton();
+
+    await uploadFile(file);
 }
 
+
+// ==============================
+// SUBIR EXCEL AL BACKEND
+// ==============================
+
+async function uploadFile(file) {
+
+    showStatus("Subiendo archivo...", "loading");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+
+        const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || "No se pudo subir el archivo."
+            );
+        }
+
+        uploadedFilename = data.filename;
+
+        showStatus("Excel subido. Analizando archivo...", "loading");
+
+        await analyzeFile(uploadedFilename);
+
+    } catch (error) {
+
+        uploadedFilename = null;
+        excelAnalysis = null;
+
+        showStatus(
+            `Error: ${error.message}`,
+            "error"
+        );
+
+        console.error(error);
+
+        updateButton();
+    }
+}
+
+
+// ==============================
+// ANALIZAR EXCEL
+// ==============================
+
+async function analyzeFile(filename) {
+
+    try {
+
+        const response = await fetch(
+            `/api/analyze/${encodeURIComponent(filename)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || "No se pudo analizar el Excel."
+            );
+        }
+
+        excelAnalysis = data;
+
+        showAnalysis(data);
+
+        updateButton();
+
+    } catch (error) {
+
+        excelAnalysis = null;
+
+        showStatus(
+            `Error al analizar el Excel: ${error.message}`,
+            "error"
+        );
+
+        console.error(error);
+
+        updateButton();
+    }
+}
+
+
+// ==============================
+// MOSTRAR INFORMACIÓN DEL EXCEL
+// ==============================
+
+function showAnalysis(data) {
+
+    const sheets = data.sheets || [];
+
+    if (sheets.length === 0) {
+        showStatus(
+            "El Excel no contiene ninguna hoja.",
+            "error"
+        );
+
+        fileAnalysis.classList.add("hidden");
+
+        return;
+    }
+
+    const totalRows = sheets.reduce(
+        (total, sheet) => total + sheet.rows,
+        0
+    );
+
+    const totalColumns = sheets.reduce(
+        (total, sheet) => total + sheet.columns,
+        0
+    );
+
+    fileAnalysis.classList.remove("hidden");
+
+    fileAnalysisStatus.textContent =
+        "✓ Excel analizado correctamente";
+
+    fileAnalysisDetails.textContent =
+        `${sheets.length} hoja(s) · ${totalRows} filas · ${totalColumns} columna(s)`;
+
+    showStatus("", "");
+
+    console.log("Análisis del Excel:", data);
+}
+
+
+// ==============================
+// BOTÓN CONVERTIR
+// ==============================
 
 function updateButton() {
 
     const clientSelected = clientSelect.value !== "";
     const fileSelected = selectedFile !== null;
+    const fileAnalyzed = excelAnalysis !== null;
 
-    convertButton.disabled = !(clientSelected && fileSelected);
+    convertButton.disabled = !(
+        clientSelected &&
+        fileSelected &&
+        fileAnalyzed
+    );
 }
 
+
+// ==============================
+// MENSAJES DE ESTADO
+// ==============================
 
 function showStatus(message, type) {
 
@@ -124,6 +291,17 @@ function showStatus(message, type) {
 
     status.classList.remove("hidden");
     status.textContent = message;
+
+    status.className = "status";
+
+    if (type) {
+        status.classList.add(type);
+    }
 }
+
+
+// ==============================
+// INICIO
+// ==============================
 
 loadClients();

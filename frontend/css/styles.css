@@ -148,3 +148,21 @@ select {
 .file-name:empty {
     display: none;
 }
+
+#fileAnalysis {
+    margin-top: 15px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+#fileAnalysisStatus {
+    font-weight: 600;
+}
+
+#fileAnalysisDetails {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 14px;
+}

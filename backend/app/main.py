@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from backend.app.api.upload import router as upload_router
 
 from backend.app.services.config_manager import ConfigManager
 
@@ -19,6 +20,8 @@ app = FastAPI(
     description="Conversor de archivos Excel para CONTASOL",
     version="0.1.0",
 )
+
+app.include_router(upload_router)
 
 
 @app.get("/api/health")

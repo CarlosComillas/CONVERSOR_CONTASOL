@@ -495,8 +495,9 @@ async function handleFile(file) {
 
 
     if (
-        extension !== ".xlsx"
-    ) {
+        extension !== ".xlsx" &&
+        extension !== ".xls"
+    ) { 
 
         showStatus(
             "El archivo debe ser un Excel .xlsx.",

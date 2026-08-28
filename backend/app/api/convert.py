@@ -99,12 +99,15 @@ def convert_excel(
             detail="No se encontró el archivo Excel.",
         )
 
-    if input_path.suffix.lower() != ".xlsx":
+    if input_path.suffix.lower() not in {
+        ".xlsx",
+        ".xls",
+    }:
 
         raise HTTPException(
             status_code=400,
             detail=(
-                "El archivo debe ser un Excel .xlsx."
+                "El archivo debe ser un Excel .xlsx o .xls."
             ),
         )
 

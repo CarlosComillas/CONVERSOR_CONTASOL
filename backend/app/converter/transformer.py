@@ -107,6 +107,56 @@ class DataTransformer:
         return value
 
     # =================================================
+    # CONVERTIR A NÚMERO
+    # =================================================
+
+    def _to_number(
+        self,
+        value: Any,
+    ) -> float:
+        """
+        Convierte un valor a número.
+
+        Los valores vacíos o no numéricos se
+        consideran 0 para las operaciones.
+        """
+
+        if value is None:
+            return 0.0
+
+        if isinstance(
+            value,
+            bool,
+        ):
+            return float(value)
+
+        try:
+
+            if isinstance(
+                value,
+                str,
+            ):
+                value = value.strip()
+
+                if not value:
+                    return 0.0
+
+                # Permitir números escritos con coma decimal
+                value = value.replace(
+                    ",",
+                    ".",
+                )
+
+            return float(value)
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+
+            return 0.0
+
+    # =================================================
     # OPERACIONES NUMÉRICAS
     # =================================================
 
@@ -126,7 +176,8 @@ class DataTransformer:
             "columns": [
                 "Salario",
                 "Complemento"
-            ]
+            ],
+            "output": "Salario total"
         }
         """
 
@@ -136,33 +187,25 @@ class DataTransformer:
 
         columns = operation.get(
             "columns",
-            []
+            [],
         )
 
         if not columns:
             return None
 
-        values = []
+        # ---------------------------------------------
+        # Obtener valores
+        # ---------------------------------------------
 
-        for column in columns:
-
-            value = row.get(
-                column
+        values = [
+            self._to_number(
+                row.get(column)
             )
+            for column in columns
+        ]
 
-            if value is None:
-                value = 0
-
-            try:
-                value = float(value)
-
-            except (
-                TypeError,
-                ValueError,
-            ):
-                value = 0
-
-            values.append(value)
+        if not values:
+            return None
 
         # ---------------------------------------------
         # SUMA
@@ -181,6 +224,7 @@ class DataTransformer:
             result = values[0]
 
             for value in values[1:]:
+
                 result -= value
 
             return result
@@ -194,6 +238,7 @@ class DataTransformer:
             result = values[0]
 
             for value in values[1:]:
+
                 result *= value
 
             return result
@@ -215,7 +260,32 @@ class DataTransformer:
 
             return result
 
+        # ---------------------------------------------
+        # Operación desconocida
+        # ---------------------------------------------
+
         return None
+
+    # =================================================
+    # LIMPIAR RESULTADO NUMÉRICO
+    # =================================================
+
+    def clean_numeric_result(
+        self,
+        value: Any,
+    ) -> Any:
+        """
+        Evita resultados como 10.0 cuando el resultado
+        realmente es un número entero.
+        """
+
+        if (
+            isinstance(value, float)
+            and value.is_integer()
+        ):
+            return int(value)
+
+        return value
 
     # =================================================
     # TRANSFORMAR FILA
@@ -225,11 +295,14 @@ class DataTransformer:
         self,
         row: dict[str, Any],
     ) -> dict[str, Any]:
+        """
+        Aplica todas las transformaciones a una fila.
+        """
 
         transformed_row = row.copy()
 
         # ---------------------------------------------
-        # Transformaciones de valores existentes
+        # 1. Transformaciones de valores existentes
         # ---------------------------------------------
 
         for key, value in row.items():
@@ -246,13 +319,19 @@ class DataTransformer:
             )
 
         # ---------------------------------------------
-        # Operaciones que crean nuevas columnas
+        # 2. Operaciones que crean columnas nuevas
         # ---------------------------------------------
 
         operations = self.transformations.get(
             "_operations",
-            []
+            [],
         )
+
+        if not isinstance(
+            operations,
+            list,
+        ):
+            operations = []
 
         for operation in operations:
 
@@ -269,11 +348,15 @@ class DataTransformer:
             if not output_column:
                 continue
 
-            transformed_row[
-                output_column
-            ] = self.calculate_operation(
+            result = self.calculate_operation(
                 transformed_row,
                 operation,
+            )
+
+            transformed_row[
+                output_column
+            ] = self.clean_numeric_result(
+                result
             )
 
         return transformed_row
@@ -286,6 +369,9 @@ class DataTransformer:
         self,
         rows: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
+        """
+        Aplica las transformaciones a todas las filas.
+        """
 
         return [
             self.transform_row(row)

@@ -1,62 +1,128 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>TÍO PABLO | Conversor CONTASOL</title>
-    <link rel="stylesheet" href="css/styles.css">
+
+    <link
+        rel="stylesheet"
+        href="css/styles.css"
+    >
 </head>
+
 
 <body>
 
     <main class="container">
 
+        <!-- =========================================
+             CABECERA
+             ========================================= -->
+
         <header class="header">
+
             <h1>TÍO PABLO</h1>
-            <p>Conversor de Excel para CONTASOL</p>
+
+            <p>
+                Conversor de Excel para CONTASOL
+            </p>
+
         </header>
+
+
+        <!-- =========================================
+             TARJETA PRINCIPAL
+             ========================================= -->
 
         <section class="card">
 
+
+            <!-- =====================================
+                 CLIENTE
+                 ===================================== -->
+
             <div class="form-group">
-                <label for="client">Cliente</label>
+
+                <label for="client">
+                    Cliente
+                </label>
 
                 <select id="client">
-                    <option value="">Cargando clientes...</option>
+
+                    <option value="">
+                        Cargando clientes...
+                    </option>
+
                 </select>
+
             </div>
 
-            <div class="form-group">
-                <label for="conversion">Tipo de conversión</label>
 
-                <select id="conversion" disabled>
-                    <option value="">Selecciona primero un cliente</option>
+            <!-- =====================================
+                 TIPO DE CONVERSIÓN
+                 ===================================== -->
+
+            <div class="form-group">
+
+                <label for="conversion">
+                    Tipo de conversión
+                </label>
+
+                <select
+                    id="conversion"
+                    disabled
+                >
+
+                    <option value="">
+                        Selecciona primero un cliente
+                    </option>
+
                 </select>
+
             </div>
 
+
+            <!-- =====================================
+                 ARCHIVO EXCEL
+                 ===================================== -->
+
             <div class="form-group">
-                <label>Archivo Excel</label>
 
-    <div class="upload-area" id="uploadArea">
+                <label>
+                    Archivo Excel
+                </label>
 
-            <div class="form-group">
-                <label>Archivo Excel</label>
 
-                <div class="upload-area" id="uploadArea">
+                <div
+                    class="upload-area"
+                    id="uploadArea"
+                >
 
-                    <div class="upload-icon">↑</div>
+                    <div class="upload-icon">
+                        ↑
+                    </div>
+
 
                     <p class="upload-title">
                         Arrastra tu Excel aquí
                     </p>
 
+
                     <p class="upload-subtitle">
                         o selecciona un archivo desde tu ordenador
                     </p>
 
-                    <button type="button" id="selectFile">
+
+                    <button
+                        type="button"
+                        id="selectFile"
+                    >
                         Seleccionar archivo
                     </button>
+
 
                     <input
                         type="file"
@@ -65,14 +131,251 @@
                         hidden
                     >
 
-                    <p id="fileName" class="file-name"></p>
-                    <div id="fileAnalysis" class="file-analysis hidden">
+
+                    <p
+                        id="fileName"
+                        class="file-name"
+                    ></p>
+
+
+                    <!-- =================================
+                         ANÁLISIS
+                         ================================= -->
+
+                    <div
+                        id="fileAnalysis"
+                        class="file-analysis hidden"
+                    >
+
                         <div id="fileAnalysisStatus"></div>
+
                         <div id="fileAnalysisDetails"></div>
+
+
+                        <!-- =============================
+                             SELECCIÓN DE COLUMNAS
+                             ============================= -->
+
+                        <div class="column-selection-container">
+
+                            <h3>
+                                Selecciona las columnas
+                            </h3>
+
+
+                            <input
+                                type="text"
+                                id="columnSearch"
+                                class="column-search"
+                                placeholder="Buscar columna..."
+                            >
+
+
+                            <div class="column-selection-actions">
+
+                                <button
+                                    type="button"
+                                    id="selectAllColumns"
+                                >
+                                    Seleccionar todas
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    id="deselectAllColumns"
+                                >
+                                    Deseleccionar todas
+                                </button>
+
+                            </div>
+
+
+                            <div
+                                id="columnSelection"
+                                class="column-selection"
+                            ></div>
+
+
+                            <p
+                                id="columnSelectionCount"
+                                class="column-selection-count"
+                            >
+                                0 columnas seleccionadas
+                            </p>
+
+                        </div>
+
+
+                        <!-- =================================
+                             TRANSFORMACIONES
+                             ================================= -->
+
+                        <div
+                            id="transformationsContainer"
+                            class="transformations-container hidden"
+                        >
+
+                            <div class="transformations-header">
+
+                                <div>
+
+                                    <h3>
+                                        Transformaciones
+                                    </h3>
+
+                                    <p>
+                                        Crea nuevas columnas a partir de los datos.
+                                    </p>
+
+                                </div>
+
+
+                                <button
+                                    type="button"
+                                    id="addTransformationButton"
+                                    class="add-transformation-button"
+                                >
+                                    + Añadir transformación
+                                </button>
+
+                            </div>
+
+
+                            <!-- =============================
+                                 FORMULARIO
+                                 ============================= -->
+
+                            <div
+                                id="transformationForm"
+                                class="transformation-form hidden"
+                            >
+
+
+                                <!-- TIPO -->
+
+                                <div class="transformation-field">
+
+                                    <label for="transformationType">
+                                        Tipo de transformación
+                                    </label>
+
+
+                                    <select
+                                        id="transformationType"
+                                    >
+
+                                        <option value="sum">
+                                            Sumar
+                                        </option>
+
+                                        <option value="subtract">
+                                            Restar
+                                        </option>
+
+                                        <option value="multiply">
+                                            Multiplicar
+                                        </option>
+
+                                        <option value="divide">
+                                            Dividir
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+
+                                <!-- COLUMNAS -->
+
+                                <div class="transformation-field">
+
+                                    <label>
+                                        Columnas utilizadas
+                                    </label>
+
+
+                                    <div
+                                        id="transformationColumns"
+                                        class="transformation-columns"
+                                    ></div>
+
+
+                                    <p
+                                        id="transformationColumnsHelp"
+                                        class="transformation-help"
+                                    >
+                                        Selecciona las columnas que quieres utilizar.
+                                    </p>
+
+                                </div>
+
+
+                                <!-- NOMBRE RESULTADO -->
+
+                                <div class="transformation-field">
+
+                                    <label for="transformationOutput">
+                                        Nombre de la nueva columna
+                                    </label>
+
+
+                                    <input
+                                        type="text"
+                                        id="transformationOutput"
+                                        placeholder="Ej. Salario bruto"
+                                    >
+
+                                </div>
+
+
+                                <!-- BOTONES -->
+
+                                <div class="transformation-form-actions">
+
+                                    <button
+                                        type="button"
+                                        id="cancelTransformationButton"
+                                        class="secondary-button"
+                                    >
+                                        Cancelar
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        id="saveTransformationButton"
+                                        class="primary-small-button"
+                                    >
+                                        Añadir transformación
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =============================
+                                 LISTA TRANSFORMACIONES
+                                 ============================= -->
+
+                            <div
+                                id="transformationsList"
+                                class="transformations-list"
+                            ></div>
+
+                        </div>
+
                     </div>
 
                 </div>
+
             </div>
+
+
+            <!-- =====================================
+                 CONVERTIR
+                 ===================================== -->
 
             <button
                 type="button"
@@ -83,13 +386,23 @@
                 Convertir a CONTASOL
             </button>
 
-            <div id="status" class="status hidden"></div>
+
+            <!-- =====================================
+            ESTADO
+            ===================================== -->
+
+            <div
+                id="status"
+                class="status hidden"
+            ></div>
 
         </section>
 
     </main>
 
+
     <script src="js/app.js"></script>
 
 </body>
+
 </html>

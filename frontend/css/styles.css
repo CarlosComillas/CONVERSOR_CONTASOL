@@ -149,10 +149,15 @@ select {
     display: none;
 }
 
+
+/* ==========================================
+   ANÁLISIS DEL EXCEL
+   ========================================== */
+
 #fileAnalysis {
     margin-top: 15px;
-    padding: 14px 16px;
-    border-radius: 10px;
+    padding: 18px;
+    border-radius: 12px;
     background: #f0fdf4;
     border: 1px solid #bbf7d0;
 }
@@ -165,4 +170,467 @@ select {
     margin-top: 4px;
     color: #64748b;
     font-size: 14px;
+}
+
+
+/* ==========================================
+   SELECCIÓN DE COLUMNAS
+   ========================================== */
+
+.column-selection-container {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #d1fae5;
+    text-align: left;
+}
+
+.column-selection-container h3 {
+    margin-bottom: 14px;
+    font-size: 17px;
+    color: #1f2937;
+}
+
+
+/* ==========================================
+   BUSCADOR
+   ========================================== */
+
+.column-search {
+    width: 100%;
+    padding: 11px 13px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+
+    background: white;
+
+    font-size: 14px;
+    color: #1f2937;
+
+    outline: none;
+
+    transition: 0.2s;
+}
+
+.column-search::placeholder {
+    color: #9ca3af;
+}
+
+.column-search:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+
+/* ==========================================
+   BOTONES DE COLUMNAS
+   ========================================== */
+
+.column-selection-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 12px;
+}
+
+.column-selection-actions button {
+    flex: 1;
+
+    padding: 9px 12px;
+
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+
+    background: white;
+
+    color: #374151;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.column-selection-actions button:hover {
+    background: #f8fafc;
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+
+/* ==========================================
+   LISTA DE COLUMNAS
+   ========================================== */
+
+.column-selection {
+    max-height: 260px;
+    overflow-y: auto;
+
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+
+    background: white;
+}
+
+
+/* ==========================================
+   CADA COLUMNA
+   ========================================== */
+
+.column-option {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition: 0.15s;
+}
+
+.column-option:last-child {
+    border-bottom: none;
+}
+
+.column-option:hover {
+    background: #f8fafc;
+}
+
+.column-option input {
+    width: 16px;
+    height: 16px;
+
+    cursor: pointer;
+
+    accent-color: #2563eb;
+}
+
+.column-option span {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================
+   CONTADOR
+   ========================================== */
+
+.column-selection-count {
+    margin-top: 10px;
+
+    text-align: right;
+
+    color: #64748b;
+
+    font-size: 13px;
+}
+
+
+/* ==========================================
+   SCROLLBAR DE COLUMNAS
+   ========================================== */
+
+.column-selection::-webkit-scrollbar {
+    width: 7px;
+}
+
+.column-selection::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.column-selection::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.column-selection::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ==========================================
+   TRANSFORMACIONES
+   ========================================== */
+
+.hidden {
+    display: none !important;
+}
+
+.transformations-container {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #d1fae5;
+    text-align: left;
+}
+
+.transformations-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.transformations-header h3 {
+    font-size: 17px;
+    color: #1f2937;
+}
+
+.transformations-header p {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.add-transformation-button {
+    padding: 9px 13px;
+    border: none;
+    border-radius: 7px;
+    background: #2563eb;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.add-transformation-button:hover {
+    background: #1d4ed8;
+}
+
+
+/* ==========================================
+   FORMULARIO TRANSFORMACIÓN
+   ========================================== */
+
+.transformation-form {
+    margin-top: 15px;
+    padding: 18px;
+    border: 1px solid #dbeafe;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.transformation-field {
+    margin-bottom: 16px;
+}
+
+.transformation-field:last-of-type {
+    margin-bottom: 0;
+}
+
+.transformation-field label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.transformation-field select,
+.transformation-field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    background: white;
+    font-size: 14px;
+    color: #1f2937;
+}
+
+.transformation-field select:focus,
+.transformation-field input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+
+/* ==========================================
+   COLUMNAS DE TRANSFORMACIÓN
+   ========================================== */
+
+.transformation-columns {
+    max-height: 180px;
+    overflow-y: auto;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+
+    background: white;
+}
+
+.transformation-column-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 9px 11px;
+
+    border-bottom: 1px solid #f1f5f9;
+
+    cursor: pointer;
+
+    font-size: 13px;
+}
+
+.transformation-column-option:last-child {
+    border-bottom: none;
+}
+
+.transformation-column-option:hover {
+    background: #f8fafc;
+}
+
+.transformation-column-option input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
+.transformation-column-option span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.transformation-help {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+
+/* ==========================================
+   BOTONES FORMULARIO
+   ========================================== */
+
+.transformation-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.secondary-button,
+.primary-small-button {
+    padding: 9px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.secondary-button {
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+}
+
+.secondary-button:hover {
+    background: #f8fafc;
+}
+
+.primary-small-button {
+    border: none;
+    background: #2563eb;
+    color: white;
+}
+
+.primary-small-button:hover {
+    background: #1d4ed8;
+}
+
+.primary-small-button:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+}
+
+
+/* ==========================================
+   LISTA DE TRANSFORMACIONES
+   ========================================== */
+
+.transformations-list {
+    margin-top: 15px;
+}
+
+.transformation-card {
+    padding: 13px 14px;
+    margin-bottom: 9px;
+
+    border: 1px solid #dbeafe;
+    border-radius: 9px;
+
+    background: white;
+}
+
+.transformation-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.transformation-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.transformation-card-operation {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.remove-transformation-button {
+    border: none;
+    background: transparent;
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.remove-transformation-button:hover {
+    text-decoration: underline;
+}
+
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 600px) {
+
+    .transformations-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .add-transformation-button {
+        width: 100%;
+    }
+
+    .transformation-form-actions {
+        flex-direction: column;
+    }
+
+    .secondary-button,
+    .primary-small-button {
+        width: 100%;
+    }
 }

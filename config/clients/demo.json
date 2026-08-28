@@ -5,15 +5,41 @@
         {
             "id": "test",
             "name": "Conversión de prueba",
+
             "mapping": {},
+
+            "selected_columns": [
+                "X (m)",
+                "Y (m)",
+                "X (cm)",
+                "Y (cm)",
+                "Vo (m/s)",
+                "Yo (cm)",
+                "Ángulo (grados)",
+                "Ángulo (radianes)"
+            ],
+
             "transformations": {
-                "Y": {
+                "Y (m)": {
                     "round": 2
-                }
+                },
+
+                "_operations": [
+                    {
+                        "operation": "sum",
+                        "columns": [
+                            "X (m)",
+                            "Y (m)"
+                        ],
+                        "output": "Posición total"
+                    }
+                ]
             },
+
             "validation": {
                 "required_fields": []
             },
+
             "output": {
                 "extension": ".xlsx"
             }

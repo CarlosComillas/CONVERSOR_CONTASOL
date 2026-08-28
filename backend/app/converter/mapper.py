@@ -3,38 +3,64 @@ from typing import Any
 
 class ExcelMapper:
     """
-    Se encarga de mapear los datos del Excel de entrada
-    al modelo interno que utilizará el conversor.
+    Mapea y filtra los datos del Excel de entrada.
 
-    Las reglas concretas de cada cliente se añadirán
-    posteriormente mediante configuración.
+    - selected_columns: columnas que queremos conservar.
+    - mapping: nombre de la columna de entrada -> nombre del campo final.
     """
 
-    def __init__(self, mapping: dict[str, str] | None = None):
+    def __init__(
+        self,
+        mapping: dict[str, str] | None = None,
+        selected_columns: list[str] | None = None,
+    ):
         self.mapping = mapping or {}
-        
+        self.selected_columns = selected_columns
 
-    def map_row(self, row: dict[str, Any]) -> dict[str, Any]:
+    def map_row(self,row: dict[str, Any],) -> dict[str, Any]:
+        """
+        Selecciona y mapea una fila.
+        """
+
+        # ---------------------------------------------
+        # 1. Seleccionar columnas
+        # ---------------------------------------------
+
+        if self.selected_columns is not None:
+
+            filtered_row = {
+                column: row[column]
+                for column in self.selected_columns
+                if column in row
+            }
+
+        else:
+            filtered_row = row.copy()
+
+        # ---------------------------------------------
+        # 2. Aplicar mapping
+        # ---------------------------------------------
+
         if not self.mapping:
-            return row.copy()
+            return filtered_row
 
         mapped_row = {}
 
         for source_column, target_field in self.mapping.items():
 
-            if source_column in row:
-                mapped_row[target_field] = row[source_column]
-            else:
-                mapped_row[target_field] = None
+            if source_column in filtered_row:
+                mapped_row[target_field] = (
+                    filtered_row[source_column]
+                )
 
         return mapped_row
 
     def map_rows(
         self,
-        rows: list[dict[str, Any]]
+        rows: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         """
-        Mapea todas las filas del Excel.
+        Selecciona y mapea todas las filas.
         """
 
         return [

@@ -15,20 +15,24 @@ class DataTransformer:
     ):
         self.transformations = transformations or {}
 
+    # =================================================
+    # TRANSFORMACIONES DE VALORES INDIVIDUALES
+    # =================================================
+
     def transform_value(
         self,
         value: Any,
         rules: Any = None,
     ) -> Any:
         """
-        Aplica las reglas de transformación a un valor.
+        Aplica reglas de transformación a un valor.
         """
 
         if value is None:
             return value
 
         # ---------------------------------------------
-        # Compatibilidad: limpieza básica de strings
+        # Limpieza básica de strings
         # ---------------------------------------------
 
         if isinstance(value, str):
@@ -46,28 +50,31 @@ class DataTransformer:
             for rule in rules:
 
                 if rule == "strip":
+
                     if isinstance(value, str):
                         value = value.strip()
 
                 elif rule == "uppercase":
+
                     if isinstance(value, str):
                         value = value.upper()
 
                 elif rule == "lowercase":
+
                     if isinstance(value, str):
                         value = value.lower()
 
             return value
 
         # ---------------------------------------------
-        # Regla default
+        # Reglas expresadas como diccionario
         # ---------------------------------------------
 
         if isinstance(rules, dict):
 
-    # ---------------------------------------------
-    # Valor por defecto
-    # ---------------------------------------------
+            # -----------------------------------------
+            # Valor por defecto
+            # -----------------------------------------
 
             if (
                 rules.get("default") is not None
@@ -78,25 +85,152 @@ class DataTransformer:
             ):
                 value = rules["default"]
 
-            # ---------------------------------------------
-            # Redondeo de números
-            # ---------------------------------------------
+            # -----------------------------------------
+            # Redondeo
+            # -----------------------------------------
 
             if rules.get("round") is not None:
 
-                decimals = int(rules["round"])
+                decimals = int(
+                    rules["round"]
+                )
 
-                if isinstance(value, (int, float)):
-                    value = round(value, decimals)
+                if isinstance(
+                    value,
+                    (int, float),
+                ):
+                    value = round(
+                        value,
+                        decimals,
+                    )
 
         return value
+
+    # =================================================
+    # OPERACIONES NUMÉRICAS
+    # =================================================
+
+    def calculate_operation(
+        self,
+        row: dict[str, Any],
+        operation: dict[str, Any],
+    ) -> Any:
+        """
+        Realiza una operación matemática utilizando
+        varias columnas de una fila.
+
+        Ejemplo:
+
+        {
+            "operation": "sum",
+            "columns": [
+                "Salario",
+                "Complemento"
+            ]
+        }
+        """
+
+        operation_type = operation.get(
+            "operation"
+        )
+
+        columns = operation.get(
+            "columns",
+            []
+        )
+
+        if not columns:
+            return None
+
+        values = []
+
+        for column in columns:
+
+            value = row.get(
+                column
+            )
+
+            if value is None:
+                value = 0
+
+            try:
+                value = float(value)
+
+            except (
+                TypeError,
+                ValueError,
+            ):
+                value = 0
+
+            values.append(value)
+
+        # ---------------------------------------------
+        # SUMA
+        # ---------------------------------------------
+
+        if operation_type == "sum":
+
+            return sum(values)
+
+        # ---------------------------------------------
+        # RESTA
+        # ---------------------------------------------
+
+        if operation_type == "subtract":
+
+            result = values[0]
+
+            for value in values[1:]:
+                result -= value
+
+            return result
+
+        # ---------------------------------------------
+        # MULTIPLICACIÓN
+        # ---------------------------------------------
+
+        if operation_type == "multiply":
+
+            result = values[0]
+
+            for value in values[1:]:
+                result *= value
+
+            return result
+
+        # ---------------------------------------------
+        # DIVISIÓN
+        # ---------------------------------------------
+
+        if operation_type == "divide":
+
+            result = values[0]
+
+            for value in values[1:]:
+
+                if value == 0:
+                    return None
+
+                result /= value
+
+            return result
+
+        return None
+
+    # =================================================
+    # TRANSFORMAR FILA
+    # =================================================
 
     def transform_row(
         self,
         row: dict[str, Any],
     ) -> dict[str, Any]:
 
-        transformed_row = {}
+        transformed_row = row.copy()
+
+        # ---------------------------------------------
+        # Transformaciones de valores existentes
+        # ---------------------------------------------
 
         for key, value in row.items():
 
@@ -104,12 +238,49 @@ class DataTransformer:
                 key
             )
 
-            transformed_row[key] = self.transform_value(
-                value,
-                rules,
+            transformed_row[key] = (
+                self.transform_value(
+                    value,
+                    rules,
+                )
+            )
+
+        # ---------------------------------------------
+        # Operaciones que crean nuevas columnas
+        # ---------------------------------------------
+
+        operations = self.transformations.get(
+            "_operations",
+            []
+        )
+
+        for operation in operations:
+
+            if not isinstance(
+                operation,
+                dict,
+            ):
+                continue
+
+            output_column = operation.get(
+                "output"
+            )
+
+            if not output_column:
+                continue
+
+            transformed_row[
+                output_column
+            ] = self.calculate_operation(
+                transformed_row,
+                operation,
             )
 
         return transformed_row
+
+    # =================================================
+    # TRANSFORMAR TODAS LAS FILAS
+    # =================================================
 
     def transform_rows(
         self,

@@ -49,6 +49,11 @@ const selectAllColumnsButton =
 const deselectAllColumnsButton =
     document.getElementById("deselectAllColumns");
 
+const removeUnselectedColumnsButton =
+    document.getElementById(
+        "removeUnselectedColumns"
+    );
+
 const columnSelection =
     document.getElementById("columnSelection");
 
@@ -148,6 +153,24 @@ let excelAnalysis = null;
 let selectedColumns = [];
 
 let transformations = [];
+
+
+// =====================================================
+// ESTADO DE COLUMNAS
+// =====================================================
+//
+// Contiene las columnas eliminadas manualmente
+// durante la edición del Excel.
+//
+// La estructura es:
+//
+// {
+//     "NombreHoja": ["DNI", "Direccion"]
+// }
+//
+// =====================================================
+
+let removedColumnsBySheet = {};
 
 
 // =====================================================
@@ -484,6 +507,8 @@ async function handleFile(
 
     transformations = [];
 
+    removedColumnsBySheet = {};
+
     resetViewer();
 
     fileName.textContent =
@@ -684,14 +709,18 @@ function showAnalysis(
 
     selectedRows = {};
 
+    removedColumnsBySheet = {};
+
     const columns =
-        sheets[0].column_details || [];
+        getCurrentSheetColumns();
 
     selectedColumns =
         columns
             .map(
                 column =>
-                    column.name
+                    typeof column === "string"
+                        ? column
+                        : column.name
             )
             .filter(
                 name =>
@@ -701,7 +730,9 @@ function showAnalysis(
                     )
             );
 
-    renderColumns(columns);
+    renderColumns(
+        getCurrentSheetColumns()
+    );
 
     updateColumnSelectionCount();
 
@@ -736,37 +767,21 @@ function renderColumns(
             .trim()
             .toLowerCase();
 
+    const availableColumns =
+        getAvailableColumns();
+
     const filteredColumns =
-        columns.filter(
-            column => {
-
-                const name =
-                    String(column.name);
-
-                if (
-                    name.startsWith(
-                        "Unnamed:"
-                    )
-                ) {
-
-                    return false;
-                }
-
-                return name
+        availableColumns.filter(
+            name =>
+                name
                     .toLowerCase()
-                    .includes(
-                        searchTerm
-                    );
-            }
+                    .includes(searchTerm)
         );
 
     for (
-        const column
+        const name
         of filteredColumns
     ) {
-
-        const name =
-            String(column.name);
 
         const label =
             document.createElement("label");
@@ -821,6 +836,8 @@ function renderColumns(
 
                 renderViewer();
 
+                renderTransformationColumns();
+
                 updateButton();
             }
         );
@@ -847,6 +864,137 @@ function renderColumns(
 
 
 // =====================================================
+// ELIMINAR COLUMNAS NO SELECCIONADAS
+// =====================================================
+
+if (
+    removeUnselectedColumnsButton
+) {
+
+    removeUnselectedColumnsButton.addEventListener(
+        "click",
+        () => {
+
+            if (!excelAnalysis) {
+
+                return;
+            }
+
+            const sheet =
+                getCurrentSheet();
+
+            if (!sheet) {
+
+                return;
+            }
+
+            const availableColumns =
+                getAvailableColumns();
+
+            if (
+                availableColumns.length === 0
+            ) {
+
+                return;
+            }
+
+            if (
+                selectedColumns.length === 0
+            ) {
+
+                showStatus(
+                    "Selecciona al menos una columna que quieras conservar.",
+                    "error"
+                );
+
+                return;
+            }
+
+            const columnsToRemove =
+                availableColumns.filter(
+                    column =>
+                        !selectedColumns.includes(
+                            column
+                        )
+                );
+
+            if (
+                columnsToRemove.length === 0
+            ) {
+
+                showStatus(
+                    "No hay columnas para eliminar.",
+                    "error"
+                );
+
+                return;
+            }
+
+            const sheetName =
+                sheet.name;
+
+            if (
+                !removedColumnsBySheet[
+                    sheetName
+                ]
+            ) {
+
+                removedColumnsBySheet[
+                    sheetName
+                ] = [];
+            }
+
+            for (
+                const column
+                of columnsToRemove
+            ) {
+
+                if (
+                    !removedColumnsBySheet[
+                        sheetName
+                    ].includes(
+                        column
+                    )
+                ) {
+
+                    removedColumnsBySheet[
+                        sheetName
+                    ].push(
+                        column
+                    );
+                }
+            }
+
+            selectedColumns =
+                selectedColumns.filter(
+                    column =>
+                        !columnsToRemove.includes(
+                            column
+                        )
+                );
+
+            renderColumns(
+                getCurrentSheetColumns()
+            );
+
+            updateColumnSelectionCount();
+
+            renderViewer();
+
+            renderTransformationColumns();
+
+            updateButton();
+
+            showStatus(
+                `${columnsToRemove.length} columna(s) eliminada(s) del visor.`,
+                "success"
+            );
+        }
+    );
+}
+
+
+// =====================================================
 // BUSCADOR
 // =====================================================
 
@@ -855,6 +1003,7 @@ columnSearch.addEventListener(
     () => {
 
         if (!excelAnalysis) {
+
             return;
         }
 
@@ -884,6 +1033,8 @@ selectAllColumnsButton.addEventListener(
 
         renderViewer();
 
+        renderTransformationColumns();
+
         updateButton();
     }
 );
@@ -906,6 +1057,8 @@ deselectAllColumnsButton.addEventListener(
         updateColumnSelectionCount();
 
         renderViewer();
+
+        renderTransformationColumns();
 
         updateButton();
     }
@@ -936,8 +1089,17 @@ function getAvailableColumns() {
         getCurrentSheet();
 
     if (!sheet) {
+
         return [];
     }
+
+    const sheetName =
+        sheet.name;
+
+    const removedColumns =
+        removedColumnsBySheet[
+            sheetName
+        ] || [];
 
     return (
         sheet.column_details || []
@@ -951,6 +1113,9 @@ function getAvailableColumns() {
                 name &&
                 !name.startsWith(
                     "Unnamed:"
+                ) &&
+                !removedColumns.includes(
+                    name
                 )
         );
 }
@@ -966,6 +1131,7 @@ function renderViewerSheets() {
         "";
 
     if (!excelAnalysis) {
+
         return;
     }
 
@@ -1019,6 +1185,25 @@ viewerSheet.addEventListener(
 
         currentTotalPages = 1;
 
+        const availableColumns =
+            getAvailableColumns();
+
+        selectedColumns =
+            selectedColumns.filter(
+                column =>
+                    availableColumns.includes(
+                        column
+                    )
+            );
+
+        if (
+            selectedColumns.length === 0
+        ) {
+
+            selectedColumns =
+                availableColumns;
+        }
+
         renderColumns(
             getCurrentSheetColumns()
         );
@@ -1039,6 +1224,7 @@ viewerSheet.addEventListener(
 function getCurrentSheet() {
 
     if (!excelAnalysis) {
+
         return null;
     }
 
@@ -1060,6 +1246,7 @@ function getCurrentSheetColumns() {
         getCurrentSheet();
 
     if (!sheet) {
+
         return [];
     }
 
@@ -1087,6 +1274,7 @@ async function loadPreviewPage() {
         getCurrentSheet();
 
     if (!sheet) {
+
         return;
     }
 
@@ -1388,6 +1576,8 @@ function renderViewerTable(
                 updateColumnSelectionCount();
 
                 renderViewer();
+
+                renderTransformationColumns();
 
                 updateButton();
             }
@@ -1871,6 +2061,8 @@ function resetViewer() {
 
     selectedRows = {};
 
+    removedColumnsBySheet = {};
+
     excelViewer.classList.add(
         "hidden"
     );
@@ -2195,6 +2387,7 @@ function renderTransformationColumns() {
         "";
 
     if (!excelAnalysis) {
+
         return;
     }
 
@@ -2268,13 +2461,33 @@ function getNumericColumns() {
         getCurrentSheet();
 
     if (!sheet) {
+
         return [];
     }
+
+    const availableColumns =
+        new Set(
+            getAvailableColumns()
+        );
 
     return (
         sheet.column_details || []
     ).filter(
         column => {
+
+            const name =
+                String(
+                    column.name || ""
+                );
+
+            if (
+                !availableColumns.has(
+                    name
+                )
+            ) {
+
+                return false;
+            }
 
             const dtype =
                 String(

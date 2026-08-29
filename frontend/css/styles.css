@@ -1046,3 +1046,32 @@ input[type="text"]:focus {
     font-size: 12px;
     line-height: 1.4;
 }
+
+/* =================================================
+   ELIMINAR COLUMNAS
+================================================= */
+
+.danger-button {
+    padding: 9px 13px;
+
+    border: 1px solid #fecaca;
+
+    border-radius: 7px;
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    font-size: 13px;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+
+.danger-button:hover {
+    background: #fee2e2;
+
+    border-color: #fca5a5;
+}

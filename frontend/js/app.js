@@ -152,20 +152,54 @@ let excelAnalysis = null;
 
 let selectedColumns = [];
 
-let transformations = [];
-
-
 // =====================================================
-// ESTADO DE COLUMNAS
+// SELECCIÓN DE COLUMNAS POR HOJA
 // =====================================================
 //
-// Contiene las columnas eliminadas manualmente
-// durante la edición del Excel.
-//
-// La estructura es:
+// Ejemplo:
 //
 // {
-//     "NombreHoja": ["DNI", "Direccion"]
+//     "Hoja 1": ["Nombre", "Importe"],
+//     "Hoja 2": ["Nombre", "DNI", "Importe"]
+// }
+//
+// =====================================================
+
+let selectedColumnsBySheet = {};
+
+let transformations = [];
+
+// =====================================================
+// TRANSFORMACIONES POR HOJA
+// =====================================================
+//
+// Ejemplo:
+//
+// {
+//     "Hoja 1": [
+//         {
+//             operation: "sum",
+//             columns: ["A", "B"],
+//             output: "Total"
+//         }
+//     ],
+//     "Hoja 2": []
+// }
+//
+// =====================================================
+
+let transformationsBySheet = {};
+
+
+// =====================================================
+// ESTADO DE COLUMNAS ELIMINADAS
+// =====================================================
+//
+// Ejemplo:
+//
+// {
+//     "Hoja 1": ["DNI"],
+//     "Hoja 2": ["Direccion"]
 // }
 //
 // =====================================================
@@ -306,6 +340,8 @@ function resetConversion() {
         true;
 
     transformations = [];
+
+    transformationsBySheet = {};
 
     renderTransformations();
 
@@ -505,7 +541,11 @@ async function handleFile(
 
     selectedColumns = [];
 
+    selectedColumnsBySheet = {};
+
     transformations = [];
+
+    transformationsBySheet = {};
 
     removedColumnsBySheet = {};
 
@@ -711,24 +751,79 @@ function showAnalysis(
 
     removedColumnsBySheet = {};
 
-    const columns =
-        getCurrentSheetColumns();
+    selectedColumnsBySheet = {};
+
+    transformationsBySheet = {};
+
+    // ---------------------------------------------
+    // Inicializar el estado de cada hoja
+    // ---------------------------------------------
+
+    for (
+        const sheet
+        of sheets
+    ) {
+
+        const sheetColumns =
+            (
+                sheet.column_details || []
+            )
+                .map(
+                    column =>
+                        typeof column === "string"
+                            ? column
+                            : column.name
+                )
+                .filter(
+                    name =>
+                        name &&
+                        !name.startsWith(
+                            "Unnamed:"
+                        )
+                );
+
+        selectedColumnsBySheet[
+            sheet.name
+        ] = [
+            ...sheetColumns
+        ];
+
+        transformationsBySheet[
+            sheet.name
+        ] = [];
+    }
+
+    const firstSheet =
+        sheets[0];
+
+    const firstSheetColumns =
+        firstSheet
+            ? (
+                firstSheet.column_details || []
+            )
+                .map(
+                    column =>
+                        typeof column === "string"
+                            ? column
+                            : column.name
+                )
+                .filter(
+                    name =>
+                        name &&
+                        !name.startsWith(
+                            "Unnamed:"
+                        )
+                )
+            : [];
 
     selectedColumns =
-        columns
-            .map(
-                column =>
-                    typeof column === "string"
-                        ? column
-                        : column.name
-            )
-            .filter(
-                name =>
-                    name &&
-                    !name.startsWith(
-                        "Unnamed:"
-                    )
-            );
+        [
+            ...(selectedColumnsBySheet[
+                firstSheet?.name
+            ] || firstSheetColumns)
+        ];
+
+    transformations = [];
 
     renderColumns(
         getCurrentSheetColumns()
@@ -740,14 +835,105 @@ function showAnalysis(
 
     renderViewer();
 
-    transformations = [];
-
     renderTransformations();
 
     showStatus(
         "",
         ""
     );
+}
+
+
+// =====================================================
+// ESTADO DE LA HOJA ACTUAL
+// =====================================================
+
+function getCurrentSheetName() {
+
+    const sheet =
+        getCurrentSheet();
+
+    return sheet
+        ? sheet.name
+        : null;
+}
+
+
+function syncCurrentSheetState() {
+
+    const sheetName =
+        getCurrentSheetName();
+
+    if (!sheetName) {
+
+        return;
+    }
+
+    selectedColumnsBySheet[
+        sheetName
+    ] = [
+        ...selectedColumns
+    ];
+
+    transformationsBySheet[
+        sheetName
+    ] = [
+        ...transformations
+    ];
+}
+
+
+function loadCurrentSheetState() {
+
+    const sheetName =
+        getCurrentSheetName();
+
+    if (!sheetName) {
+
+        selectedColumns = [];
+
+        transformations = [];
+
+        return;
+    }
+
+    const availableColumns =
+        getAvailableColumns();
+
+    const storedColumns =
+        selectedColumnsBySheet[
+            sheetName
+        ];
+
+    selectedColumns =
+        (
+            storedColumns ||
+            availableColumns
+        )
+            .filter(
+                column =>
+                    availableColumns.includes(
+                        column
+                    )
+            );
+
+    if (
+        selectedColumns.length === 0 &&
+        availableColumns.length > 0
+    ) {
+
+        selectedColumns =
+            [
+                ...availableColumns
+            ];
+    }
+
+    transformations =
+        [
+            ...(transformationsBySheet[
+                sheetName
+            ] || [])
+        ];
 }
 
 
@@ -830,6 +1016,20 @@ function renderColumns(
                                 columnName !==
                                 name
                         );
+                }
+
+                const currentSheetName =
+                    getCurrentSheetName();
+
+                if (
+                    currentSheetName
+                ) {
+
+                    selectedColumnsBySheet[
+                        currentSheetName
+                    ] = [
+                        ...selectedColumns
+                    ];
                 }
 
                 updateColumnSelectionCount();
@@ -973,6 +1173,12 @@ if (
                         )
                 );
 
+            selectedColumnsBySheet[
+                sheetName
+            ] = [
+                ...selectedColumns
+            ];
+
             renderColumns(
                 getCurrentSheetColumns()
             );
@@ -992,7 +1198,6 @@ if (
         }
     );
 }
-
 
 // =====================================================
 // BUSCADOR
@@ -1025,6 +1230,18 @@ selectAllColumnsButton.addEventListener(
         selectedColumns =
             getAvailableColumns();
 
+        const sheetName =
+            getCurrentSheetName();
+
+        if (sheetName) {
+
+            selectedColumnsBySheet[
+                sheetName
+            ] = [
+                ...selectedColumns
+            ];
+        }
+
         renderColumns(
             getCurrentSheetColumns()
         );
@@ -1049,6 +1266,16 @@ deselectAllColumnsButton.addEventListener(
     () => {
 
         selectedColumns = [];
+
+        const sheetName =
+            getCurrentSheetName();
+
+        if (sheetName) {
+
+            selectedColumnsBySheet[
+                sheetName
+            ] = [];
+        }
 
         renderColumns(
             getCurrentSheetColumns()
@@ -1174,6 +1401,9 @@ viewerSheet.addEventListener(
     "change",
     async () => {
 
+        // Guardamos el estado de la hoja anterior
+        syncCurrentSheetState();
+
         currentSheetIndex =
             Number(
                 viewerSheet.value
@@ -1185,24 +1415,8 @@ viewerSheet.addEventListener(
 
         currentTotalPages = 1;
 
-        const availableColumns =
-            getAvailableColumns();
-
-        selectedColumns =
-            selectedColumns.filter(
-                column =>
-                    availableColumns.includes(
-                        column
-                    )
-            );
-
-        if (
-            selectedColumns.length === 0
-        ) {
-
-            selectedColumns =
-                availableColumns;
-        }
+        // Cargamos el estado de la nueva hoja
+        loadCurrentSheetState();
 
         renderColumns(
             getCurrentSheetColumns()
@@ -1211,6 +1425,8 @@ viewerSheet.addEventListener(
         updateColumnSelectionCount();
 
         renderTransformationColumns();
+
+        renderTransformations();
 
         await loadPreviewPage();
     }
@@ -1569,6 +1785,18 @@ function renderViewerTable(
                         );
                 }
 
+                const sheetName =
+                    getCurrentSheetName();
+
+                if (sheetName) {
+
+                    selectedColumnsBySheet[
+                        sheetName
+                    ] = [
+                        ...selectedColumns
+                    ];
+                }
+
                 renderColumns(
                     getCurrentSheetColumns()
                 );
@@ -1761,8 +1989,6 @@ function renderViewerTable(
         );
     }
 }
-
-
 // =====================================================
 // SELECCIÓN FILAS
 // =====================================================
@@ -2262,6 +2488,18 @@ function renderTransformations() {
                     1
                 );
 
+                const sheetName =
+                    getCurrentSheetName();
+
+                if (sheetName) {
+
+                    transformationsBySheet[
+                        sheetName
+                    ] = [
+                        ...transformations
+                    ];
+                }
+
                 renderTransformations();
 
                 updateButton();
@@ -2502,8 +2740,6 @@ function getNumericColumns() {
         }
     );
 }
-
-
 // =====================================================
 // GUARDAR TRANSFORMACIÓN
 // =====================================================
@@ -2570,7 +2806,7 @@ saveTransformationButton.addEventListener(
             return;
         }
 
-        transformations.push({
+        const transformation = {
 
             operation:
                 operation,
@@ -2580,7 +2816,23 @@ saveTransformationButton.addEventListener(
 
             output:
                 output
-        });
+        };
+
+        transformations.push(
+            transformation
+        );
+
+        const sheetName =
+            getCurrentSheetName();
+
+        if (sheetName) {
+
+            transformationsBySheet[
+                sheetName
+            ] = [
+                ...transformations
+            ];
+        }
 
         resetTransformationForm();
 
@@ -2636,7 +2888,14 @@ function updateButton() {
         excelAnalysis !== null;
 
     const columnsSelected =
-        selectedColumns.length > 0;
+        Object.values(
+            selectedColumnsBySheet
+        )
+            .some(
+                columns =>
+                    Array.isArray(columns) &&
+                    columns.length > 0
+            );
 
     convertButton.disabled = !(
         clientSelected &&
@@ -2649,6 +2908,70 @@ function updateButton() {
 
 
 // =====================================================
+// PREPARAR ESTADO POR HOJA
+// =====================================================
+
+function prepareSheetState() {
+
+    syncCurrentSheetState();
+
+    const selectedColumns =
+        {};
+
+    const transformations =
+        {};
+
+    const removedColumns =
+        {};
+
+    for (
+        const sheet
+        of excelAnalysis.sheets
+    ) {
+
+        const sheetName =
+            sheet.name;
+
+        selectedColumns[
+            sheetName
+        ] = [
+            ...(
+                selectedColumnsBySheet[
+                    sheetName
+                ] || []
+            )
+        ];
+
+        transformations[
+            sheetName
+        ] = [
+            ...(
+                transformationsBySheet[
+                    sheetName
+                ] || []
+            )
+        ];
+
+        removedColumns[
+            sheetName
+        ] = [
+            ...(
+                removedColumnsBySheet[
+                    sheetName
+                ] || []
+            )
+        ];
+    }
+
+    return {
+        selectedColumns,
+        transformations,
+        removedColumns
+    };
+}
+
+
+// =====================================================
 // CONVERTIR
 // =====================================================
 
@@ -2656,11 +2979,13 @@ convertButton.addEventListener(
     "click",
     async () => {
 
+        syncCurrentSheetState();
+
         if (
             !selectedFile ||
             !clientSelect.value ||
             !conversionSelect.value ||
-            selectedColumns.length === 0
+            !excelAnalysis
         ) {
 
             return;
@@ -2722,6 +3047,14 @@ convertButton.addEventListener(
 
 
             // =========================================
+            // ESTADO POR HOJA
+            // =========================================
+
+            const sheetState =
+                prepareSheetState();
+
+
+            // =========================================
             // PARÁMETROS
             // =========================================
 
@@ -2734,7 +3067,21 @@ convertButton.addEventListener(
             const selectedColumnsParam =
                 encodeURIComponent(
                     JSON.stringify(
-                        selectedColumns
+                        sheetState.selectedColumns
+                    )
+                );
+
+            const transformationsParam =
+                encodeURIComponent(
+                    JSON.stringify(
+                        sheetState.transformations
+                    )
+                );
+
+            const removedColumnsParam =
+                encodeURIComponent(
+                    JSON.stringify(
+                        sheetState.removedColumns
                     )
                 );
 
@@ -2742,13 +3089,6 @@ convertButton.addEventListener(
                 encodeURIComponent(
                     JSON.stringify(
                         getSelectedRowsBySheet()
-                    )
-                );
-
-            const transformationsParam =
-                encodeURIComponent(
-                    JSON.stringify(
-                        transformations
                     )
                 );
 
@@ -2770,6 +3110,7 @@ convertButton.addEventListener(
                 )}` +
                 `&selected_columns=${selectedColumnsParam}` +
                 `&transformations=${transformationsParam}` +
+                `&removed_columns=${removedColumnsParam}` +
                 `&selected_rows=${selectedRowsParam}`;
 
 

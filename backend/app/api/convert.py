@@ -5,6 +5,7 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
+from backend.app.converter.excel_reader import ExcelReader
 from backend.app.converter.excel_writer import ExcelWriter
 from backend.app.converter.mapper import ExcelMapper
 from backend.app.converter.transformer import DataTransformer
@@ -25,10 +26,98 @@ OUTPUT_DIR = BASE_DIR / "data" / "output"
 
 CLIENTS_CONFIG_DIR = BASE_DIR / "config" / "clients"
 
-config_manager = ConfigManager(
-    CLIENTS_CONFIG_DIR
-)
+config_manager = ConfigManager(CLIENTS_CONFIG_DIR)
 
+
+# =================================================
+# HELPERS
+# =================================================
+
+def parse_json_parameter(
+    value: str | None,
+    parameter_name: str,
+):
+    """
+    Convierte un parámetro JSON recibido
+    por query string en un objeto Python.
+    """
+
+    if value is None:
+        return None
+
+    try:
+        return json.loads(value)
+
+    except json.JSONDecodeError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"El parámetro '{parameter_name}' "
+                "no tiene un formato JSON válido."
+            ),
+        ) from error
+
+
+def filter_selected_rows(
+    dataframe: pd.DataFrame,
+    selected_rows: list[int] | None,
+    header_row: int,
+) -> pd.DataFrame:
+    """
+    Conserva únicamente las filas seleccionadas.
+
+    Los números recibidos son los números reales
+    de fila del Excel.
+    """
+
+    if not selected_rows:
+        return dataframe
+
+    normalized_rows = set()
+
+    for row_number in selected_rows:
+
+        try:
+
+            normalized_rows.add(
+                int(row_number)
+            )
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+
+            continue
+
+    if not normalized_rows:
+        return dataframe
+
+    selected_indexes = []
+
+    for index in dataframe.index:
+
+        excel_row_number = (
+            int(index)
+            + header_row
+            + 2
+        )
+
+        if excel_row_number in normalized_rows:
+
+            selected_indexes.append(
+                index
+            )
+
+    return dataframe.loc[
+        selected_indexes
+    ].copy()
+
+
+# =================================================
+# CONVERSIÓN
+# =================================================
 
 @router.post("/convert")
 def convert_excel(
@@ -40,26 +129,20 @@ def convert_excel(
     selected_rows: str | None = None,
 ):
     """
-    Convierte un Excel utilizando la configuración
-    del cliente y de la conversión seleccionada.
+    Convierte un Excel.
 
-    La selección manual de columnas, filas y
-    transformaciones realizada desde la interfaz
-    tiene prioridad sobre la configuración guardada.
+    Permite seleccionar manualmente:
 
-    selected_rows tiene este formato:
+    - columnas
+    - filas
+    - transformaciones
 
-    {
-        "Hoja1": [2, 3, 5],
-        "Hoja2": [4, 8]
-    }
-
-    Las filas utilizan el número real de fila
-    del Excel.
+    Si no se seleccionan filas,
+    se conservan todas.
     """
 
     # =================================================
-    # 1. COMPROBAR CLIENTE
+    # 1. CLIENTE
     # =================================================
 
     try:
@@ -78,9 +161,8 @@ def convert_excel(
             ),
         )
 
-
     # =================================================
-    # 2. CARGAR CONVERSIÓN
+    # 2. CONVERSIÓN
     # =================================================
 
     try:
@@ -103,14 +185,13 @@ def convert_excel(
             ),
         )
 
-
     # =================================================
-    # 3. COMPROBAR EXCEL
+    # 3. ARCHIVO
     # =================================================
 
     input_path = (
-        INPUT_DIR /
-        Path(filename).name
+        INPUT_DIR
+        / Path(filename).name
     )
 
     if not input_path.exists():
@@ -118,10 +199,10 @@ def convert_excel(
         raise HTTPException(
             status_code=404,
             detail=(
-                "No se encontró el archivo Excel."
+                "No se encontró el "
+                "archivo Excel."
             ),
         )
-
 
     if input_path.suffix.lower() not in {
         ".xlsx",
@@ -131,14 +212,13 @@ def convert_excel(
         raise HTTPException(
             status_code=400,
             detail=(
-                "El archivo debe ser un Excel "
-                ".xlsx o .xls."
+                "El archivo debe ser un "
+                "Excel .xlsx o .xls."
             ),
         )
 
-
     # =================================================
-    # 4. NOMBRE DEL ARCHIVO DE SALIDA
+    # 4. SALIDA
     # =================================================
 
     output_filename = (
@@ -148,38 +228,20 @@ def convert_excel(
     )
 
     output_path = (
-        OUTPUT_DIR /
-        output_filename
+        OUTPUT_DIR
+        / output_filename
     )
-
 
     try:
 
         # =================================================
-        # 5. LEER EXCEL
+        # 5. CONFIGURACIÓN
         # =================================================
 
-        excel_file = pd.ExcelFile(
-            input_path
+        mapping = conversion.get(
+            "mapping",
+            {},
         )
-
-        sheet_names = (
-            excel_file.sheet_names
-        )
-
-        if not sheet_names:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "El Excel no contiene hojas."
-                ),
-            )
-
-
-        # =================================================
-        # 6. OBTENER COLUMNAS
-        # =================================================
 
         configured_columns = (
             conversion.get(
@@ -187,29 +249,38 @@ def convert_excel(
             )
         )
 
-        selected_columns_list = None
+        validation_config = (
+            conversion.get(
+                "validation",
+                {},
+            )
+        )
 
+        required_fields = (
+            validation_config.get(
+                "required_fields",
+                [],
+            )
+        )
 
-        if selected_columns is not None:
+        # =================================================
+        # 6. COLUMNAS SELECCIONADAS
+        # =================================================
 
-            try:
+        selected_columns_list = (
+            parse_json_parameter(
+                selected_columns,
+                "selected_columns",
+            )
+        )
 
-                selected_columns_list = (
-                    json.loads(
-                        selected_columns
-                    )
-                )
+        if selected_columns_list is None:
 
-            except json.JSONDecodeError:
+            selected_columns_list = (
+                configured_columns
+            )
 
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "La selección de columnas "
-                        "no tiene un formato válido."
-                    ),
-                )
-
+        if selected_columns_list is not None:
 
             if not isinstance(
                 selected_columns_list,
@@ -223,7 +294,6 @@ def convert_excel(
                         "debe ser una lista."
                     ),
                 )
-
 
             if not all(
                 isinstance(
@@ -242,186 +312,18 @@ def convert_excel(
                     ),
                 )
 
-
-        else:
-
-            selected_columns_list = (
-                configured_columns
-            )
-
-
         # =================================================
-        # 7. OBTENER FILAS SELECCIONADAS
+        # 7. TRANSFORMACIONES
         # =================================================
 
-        selected_rows_config = None
-
-
-        if selected_rows is not None:
-
-            try:
-
-                selected_rows_config = (
-                    json.loads(
-                        selected_rows
-                    )
-                )
-
-            except json.JSONDecodeError:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "La selección de filas "
-                        "no tiene un formato válido."
-                    ),
-                )
-
-
-            if not isinstance(
-                selected_rows_config,
-                dict,
-            ):
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "La selección de filas "
-                        "debe ser un objeto."
-                    ),
-                )
-
-
-            for (
-                sheet_name,
-                rows
-            ) in selected_rows_config.items():
-
-                if not isinstance(
-                    sheet_name,
-                    str,
-                ):
-
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            "El nombre de la hoja "
-                            "debe ser texto."
-                        ),
-                    )
-
-
-                if not isinstance(
-                    rows,
-                    list,
-                ):
-
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            "Las filas seleccionadas "
-                            "deben ser una lista."
-                        ),
-                    )
-
-
-                if not all(
-                    isinstance(
-                        row,
-                        int,
-                    )
-                    for row
-                    in rows
-                ):
-
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            "Los números de fila "
-                            "deben ser enteros."
-                        ),
-                    )
-
-
-        # =================================================
-        # 8. OBTENER MAPPING
-        # =================================================
-
-        mapping = conversion.get(
-            "mapping",
-            {},
-        )
-
-
-        # =================================================
-        # 9. CONFIGURACIÓN DE VALIDACIÓN
-        # =================================================
-
-        validation_config = (
-            conversion.get(
-                "validation",
-                {},
-            )
-        )
-
-        required_fields = (
-            validation_config.get(
-                "required_fields",
-                [],
-            )
-        )
-
-
-        # =================================================
-        # 10. OBTENER TRANSFORMACIONES
-        # =================================================
-
-        configured_transformations = (
-            conversion.get(
+        manual_transformations = (
+            parse_json_parameter(
+                transformations,
                 "transformations",
-                {}
             )
         )
 
-
-        if isinstance(
-            configured_transformations,
-            dict,
-        ):
-
-            transformation_config = (
-                configured_transformations.copy()
-            )
-
-        else:
-
-            transformation_config = {}
-
-
-        # =================================================
-        # 11. TRANSFORMACIONES DE LA INTERFAZ
-        # =================================================
-
-        if transformations is not None:
-
-            try:
-
-                manual_transformations = (
-                    json.loads(
-                        transformations
-                    )
-                )
-
-            except json.JSONDecodeError:
-
-                raise HTTPException(
-                    status_code=400,
-                    detail=(
-                        "Las transformaciones "
-                        "no tienen un formato válido."
-                    ),
-                )
-
+        if manual_transformations is not None:
 
             if not isinstance(
                 manual_transformations,
@@ -436,95 +338,151 @@ def convert_excel(
                     ),
                 )
 
+            transformations_config = {}
 
-            transformation_config[
-                "_operations"
-            ] = manual_transformations
+            for operation in (
+                manual_transformations
+            ):
 
+                if not isinstance(
+                    operation,
+                    dict,
+                ):
 
-        # =================================================
-        # 12. CONVERTIR HOJAS
-        # =================================================
-        #
-        # Actualmente la conversión utiliza
-        # la primera hoja del Excel.
-        #
-        # La estructura de selected_rows ya está
-        # preparada para trabajar con múltiples hojas.
-        #
-        # =================================================
+                    continue
 
-        first_sheet_name = (
-            sheet_names[0]
-        )
-
-
-        dataframe = pd.read_excel(
-            input_path,
-            sheet_name=first_sheet_name,
-        )
-
-
-        # =================================================
-        # 13. FILTRAR FILAS
-        # =================================================
-
-        if (
-            selected_rows_config is not None
-            and first_sheet_name
-            in selected_rows_config
-        ):
-
-            requested_rows = (
-                selected_rows_config[
-                    first_sheet_name
-                ]
-            )
-
-            if requested_rows:
-
-                # El visor utiliza números de fila
-                # empezando en 1.
-                #
-                # pandas utiliza índices empezando
-                # en 0.
-                #
-                # Por eso convertimos:
-                #
-                # Excel fila 2 -> pandas índice 1
-
-                dataframe = (
-                    dataframe
-                    .copy()
+                output = operation.get(
+                    "output"
                 )
 
-                dataframe[
-                    "_original_excel_row"
-                ] = (
-                    dataframe.index + 2
-                )
-
-                dataframe = (
-                    dataframe[
-                        dataframe[
-                            "_original_excel_row"
-                        ].isin(
-                            requested_rows
-                        )
-                    ]
-                )
-
-                dataframe = (
-                    dataframe.drop(
-                        columns=[
-                            "_original_excel_row"
-                        ]
+                operation_type = (
+                    operation.get(
+                        "operation"
                     )
                 )
 
+                columns = operation.get(
+                    "columns",
+                    [],
+                )
+
+                if not output:
+
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "Toda transformación "
+                            "debe tener una columna "
+                            "de salida."
+                        ),
+                    )
+
+                if not isinstance(
+                    columns,
+                    list,
+                ):
+
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "Las columnas de una "
+                            "transformación deben "
+                            "ser una lista."
+                        ),
+                    )
+
+                transformations_config.setdefault(
+                    "_operations",
+                    [],
+                ).append(
+                    {
+                        "operation":
+                            operation_type,
+
+                        "columns":
+                            columns,
+
+                        "output":
+                            output,
+                    }
+                )
+
+        else:
+
+            transformations_config = (
+                conversion.get(
+                    "transformations",
+                    {},
+                )
+            )
 
         # =================================================
-        # 14. VALIDAR COLUMNAS
+        # 8. FILAS SELECCIONADAS
+        # =================================================
+
+        selected_rows_config = (
+            parse_json_parameter(
+                selected_rows,
+                "selected_rows",
+            )
+        )
+
+        if selected_rows_config is not None:
+
+            if not isinstance(
+                selected_rows_config,
+                dict,
+            ):
+
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "La selección de filas "
+                        "debe ser un objeto "
+                        "por hoja."
+                    ),
+                )
+
+        # =================================================
+        # 9. LEER EXCEL
+        # =================================================
+
+        reader = ExcelReader(
+            input_path
+        )
+
+        sheet_names = (
+            reader.get_sheet_names()
+        )
+
+        if not sheet_names:
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "El Excel no contiene "
+                    "ninguna hoja."
+                ),
+            )
+
+        # =================================================
+        # 10. HOJA ACTUAL
+        # =================================================
+
+        sheet_name = sheet_names[0]
+
+        dataframe = reader.read_sheet(
+            sheet_name
+        )
+
+        header_row = (
+            reader.detect_header_row(
+                sheet_name
+            )
+        )
+
+        # =================================================
+        # 11. VALIDAR COLUMNAS
         # =================================================
 
         if selected_columns_list is not None:
@@ -544,30 +502,51 @@ def convert_excel(
                     detail={
                         "message": (
                             "Algunas columnas "
-                            "seleccionadas no existen "
-                            "en el Excel."
+                            "seleccionadas no "
+                            "existen en el Excel."
                         ),
-                        "missing_columns": (
-                            missing_columns
-                        ),
+                        "missing_columns":
+                            missing_columns,
                     },
                 )
 
+            dataframe = dataframe[
+                selected_columns_list
+            ].copy()
 
         # =================================================
-        # 15. CONVERTIR A RECORDS
+        # 12. FILTRAR FILAS
         # =================================================
 
-        rows = (
-            dataframe
-            .to_dict(
-                orient="records"
+        rows_for_sheet = None
+
+        if isinstance(
+            selected_rows_config,
+            dict,
+        ):
+
+            rows_for_sheet = (
+                selected_rows_config.get(
+                    sheet_name
+                )
             )
+
+        dataframe = filter_selected_rows(
+            dataframe,
+            rows_for_sheet,
+            header_row,
         )
 
+        # =================================================
+        # 13. DATAFRAME → FILAS
+        # =================================================
+
+        rows = dataframe.to_dict(
+            orient="records"
+        )
 
         # =================================================
-        # 16. MAPEAR
+        # 14. MAPEAR
         # =================================================
 
         mapper = ExcelMapper(
@@ -578,19 +557,16 @@ def convert_excel(
         )
 
         mapped_rows = (
-            mapper.map_rows(
-                rows
-            )
+            mapper.map_rows(rows)
         )
 
-
         # =================================================
-        # 17. TRANSFORMAR
+        # 15. TRANSFORMAR
         # =================================================
 
         transformer = DataTransformer(
             transformations=(
-                transformation_config
+                transformations_config
             )
         )
 
@@ -600,9 +576,8 @@ def convert_excel(
             )
         )
 
-
         # =================================================
-        # 18. VALIDAR
+        # 16. VALIDAR
         # =================================================
 
         validator = DataValidator(
@@ -617,7 +592,6 @@ def convert_excel(
             )
         )
 
-
         if not validation_result[
             "valid"
         ]:
@@ -629,21 +603,14 @@ def convert_excel(
                         "El Excel contiene "
                         "errores de validación."
                     ),
-                    "validation": (
-                        validation_result
-                    ),
+                    "validation":
+                        validation_result,
                 },
             )
 
-
         # =================================================
-        # 19. GENERAR EXCEL
+        # 17. ESCRIBIR
         # =================================================
-
-        OUTPUT_DIR.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
 
         writer = ExcelWriter()
 
@@ -652,25 +619,22 @@ def convert_excel(
             output_path,
         )
 
-
     except HTTPException:
 
         raise
-
 
     except Exception as error:
 
         raise HTTPException(
             status_code=500,
             detail=(
-                f"Error durante la conversión: "
+                "Error durante la conversión: "
                 f"{error}"
             ),
-        )
-
+        ) from error
 
     # =================================================
-    # 20. DESCARGAR RESULTADO
+    # 18. DESCARGAR
     # =================================================
 
     return FileResponse(

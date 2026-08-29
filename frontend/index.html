@@ -1,26 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>TÍO PABLO | Conversor CONTASOL</title>
 
-    <link
-        rel="stylesheet"
-        href="css/styles.css"
-    >
+    <link rel="stylesheet" href="css/styles.css">
 </head>
-
 
 <body>
 
     <main class="container">
 
-        <!-- =========================================
+        <!-- =================================================
              CABECERA
-             ========================================= -->
+        ================================================== -->
 
         <header class="header">
 
@@ -33,16 +28,16 @@
         </header>
 
 
-        <!-- =========================================
+        <!-- =================================================
              TARJETA PRINCIPAL
-             ========================================= -->
+        ================================================== -->
 
         <section class="card">
 
 
-            <!-- =====================================
+            <!-- =================================================
                  CLIENTE
-                 ===================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
@@ -61,9 +56,9 @@
             </div>
 
 
-            <!-- =====================================
-                 TIPO DE CONVERSIÓN
-                 ===================================== -->
+            <!-- =================================================
+                 CONVERSIÓN
+            ================================================== -->
 
             <div class="form-group">
 
@@ -85,9 +80,9 @@
             </div>
 
 
-            <!-- =====================================
+            <!-- =================================================
                  ARCHIVO EXCEL
-                 ===================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
@@ -138,9 +133,9 @@
                     ></p>
 
 
-                    <!-- =================================
+                    <!-- =================================================
                          ANÁLISIS
-                         ================================= -->
+                    ================================================== -->
 
                     <div
                         id="fileAnalysis"
@@ -152,41 +147,59 @@
                         <div id="fileAnalysisDetails"></div>
 
 
-                        <!-- =============================
+                        <!-- =================================================
                              SELECCIÓN DE COLUMNAS
-                             ============================= -->
+                        ================================================== -->
 
                         <div class="column-selection-container">
 
-                            <h3>
-                                Selecciona las columnas
-                            </h3>
+                            <div class="section-header">
+
+                                <div>
+
+                                    <h3>
+                                        Selecciona las columnas
+                                    </h3>
+
+                                    <p class="section-description">
+                                        Elige las columnas que quieres conservar.
+                                    </p>
+
+                                </div>
+
+                            </div>
 
 
-                            <input
-                                type="text"
-                                id="columnSearch"
-                                class="column-search"
-                                placeholder="Buscar columna..."
-                            >
+                            <div class="column-tools">
 
-
-                            <div class="column-selection-actions">
-
-                                <button
-                                    type="button"
-                                    id="selectAllColumns"
+                                <input
+                                    type="text"
+                                    id="columnSearch"
+                                    class="column-search"
+                                    placeholder="Buscar columna..."
                                 >
-                                    Seleccionar todas
-                                </button>
 
 
-                                <button
-                                    type="button"
-                                    id="deselectAllColumns"
-                                >
-                                    Deseleccionar todas
-                                </button>
+                                <div class="column-actions">
+
+                                    <button
+                                        type="button"
+                                        id="selectAllColumns"
+                                        class="secondary-button"
+                                    >
+                                        Seleccionar todas
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        id="deselectAllColumns"
+                                        class="secondary-button"
+                                    >
+                                        Deseleccionar todas
+                                    </button>
+
+                                </div>
 
                             </div>
 
@@ -199,24 +212,185 @@
 
                             <p
                                 id="columnSelectionCount"
-                                class="column-selection-count"
+                                class="selection-count"
                             >
-                                0 columnas seleccionadas
+                                0 de 0 columnas seleccionadas
                             </p>
 
                         </div>
 
 
-                        <!-- =================================
+                        <!-- =================================================
+                             VISOR DEL EXCEL
+                        ================================================== -->
+
+                        <div
+                            id="excelViewer"
+                            class="excel-viewer hidden"
+                        >
+
+                            <div class="viewer-header">
+
+                                <div>
+
+                                    <h3>
+                                        Vista previa del Excel
+                                    </h3>
+
+                                    <p
+                                        id="viewerDetails"
+                                        class="section-description"
+                                    >
+                                        Mostrando una vista previa de los datos.
+                                    </p>
+
+                                </div>
+
+
+                                <div
+                                    id="viewerSheetContainer"
+                                    class="viewer-sheet-container"
+                                >
+
+                                    <label
+                                        for="viewerSheet"
+                                        class="viewer-sheet-label"
+                                    >
+                                        Hoja
+                                    </label>
+
+                                    <select
+                                        id="viewerSheet"
+                                        class="viewer-sheet"
+                                    ></select>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 ACCIONES DE FILAS
+                            ================================================== -->
+
+                            <div class="row-tools">
+
+                                <div class="row-selection-actions">
+
+                                    <button
+                                        type="button"
+                                        id="selectAllRows"
+                                        class="secondary-button"
+                                    >
+                                        Seleccionar todas
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        id="deselectAllRows"
+                                        class="secondary-button"
+                                    >
+                                        Deseleccionar todas
+                                    </button>
+
+                                </div>
+
+
+                                <div
+                                    id="rowSelectionCount"
+                                    class="selection-count"
+                                >
+                                    0 filas seleccionadas
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 TABLA
+                            ================================================== -->
+
+                            <div class="excel-table-wrapper">
+
+                                <table
+                                    id="excelTable"
+                                    class="excel-table"
+                                >
+
+                                    <thead
+                                        id="excelTableHead"
+                                    ></thead>
+
+                                    <tbody
+                                        id="excelTableBody"
+                                    ></tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 PAGINACIÓN VISUAL
+                            ================================================== -->
+
+                            <div class="viewer-footer">
+
+                                <span
+                                    id="viewerPagination"
+                                    class="viewer-pagination"
+                                >
+                                    Mostrando 0 filas
+                                </span>
+
+
+                                <div class="pagination-actions">
+
+                                    <button
+                                        type="button"
+                                        id="previousPage"
+                                        class="pagination-button"
+                                        disabled
+                                    >
+                                        ← Anterior
+                                    </button>
+
+
+                                    <span
+                                        id="currentPage"
+                                        class="current-page"
+                                    >
+                                        1
+                                    </span>
+
+
+                                    <button
+                                        type="button"
+                                        id="nextPage"
+                                        class="pagination-button"
+                                        disabled
+                                    >
+                                        Siguiente →
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
                              TRANSFORMACIONES
-                             ================================= -->
+                        ================================================== -->
 
                         <div
                             id="transformationsContainer"
                             class="transformations-container hidden"
                         >
 
-                            <div class="transformations-header">
+                            <div class="section-header">
 
                                 <div>
 
@@ -224,8 +398,8 @@
                                         Transformaciones
                                     </h3>
 
-                                    <p>
-                                        Crea nuevas columnas a partir de los datos.
+                                    <p class="section-description">
+                                        Selecciona columnas y aplica operaciones antes de convertir.
                                     </p>
 
                                 </div>
@@ -234,7 +408,7 @@
                                 <button
                                     type="button"
                                     id="addTransformationButton"
-                                    class="add-transformation-button"
+                                    class="secondary-button"
                                 >
                                     + Añadir transformación
                                 </button>
@@ -242,24 +416,18 @@
                             </div>
 
 
-                            <!-- =============================
-                                 FORMULARIO
-                                 ============================= -->
+                            <!-- FORMULARIO -->
 
                             <div
                                 id="transformationForm"
                                 class="transformation-form hidden"
                             >
 
-
-                                <!-- TIPO -->
-
-                                <div class="transformation-field">
+                                <div class="form-group">
 
                                     <label for="transformationType">
                                         Tipo de transformación
                                     </label>
-
 
                                     <select
                                         id="transformationType"
@@ -286,50 +454,39 @@
                                 </div>
 
 
-                                <!-- COLUMNAS -->
-
-                                <div class="transformation-field">
+                                <div class="form-group">
 
                                     <label>
-                                        Columnas utilizadas
+                                        Columnas a utilizar
                                     </label>
-
 
                                     <div
                                         id="transformationColumns"
                                         class="transformation-columns"
                                     ></div>
 
-
                                     <p
                                         id="transformationColumnsHelp"
                                         class="transformation-help"
-                                    >
-                                        Selecciona las columnas que quieres utilizar.
-                                    </p>
+                                    ></p>
 
                                 </div>
 
 
-                                <!-- NOMBRE RESULTADO -->
-
-                                <div class="transformation-field">
+                                <div class="form-group">
 
                                     <label for="transformationOutput">
                                         Nombre de la nueva columna
                                     </label>
 
-
                                     <input
                                         type="text"
                                         id="transformationOutput"
-                                        placeholder="Ej. Salario bruto"
+                                        placeholder="Ejemplo: Total"
                                     >
 
                                 </div>
 
-
-                                <!-- BOTONES -->
 
                                 <div class="transformation-form-actions">
 
@@ -355,14 +512,18 @@
                             </div>
 
 
-                            <!-- =============================
-                                 LISTA TRANSFORMACIONES
-                                 ============================= -->
+                            <!-- LISTA -->
 
                             <div
                                 id="transformationsList"
                                 class="transformations-list"
-                            ></div>
+                            >
+
+                                <p class="transformation-help">
+                                    Todavía no hay transformaciones.
+                                </p>
+
+                            </div>
 
                         </div>
 
@@ -373,9 +534,9 @@
             </div>
 
 
-            <!-- =====================================
+            <!-- =================================================
                  CONVERTIR
-                 ===================================== -->
+            ================================================== -->
 
             <button
                 type="button"
@@ -387,9 +548,9 @@
             </button>
 
 
-            <!-- =====================================
-            ESTADO
-            ===================================== -->
+            <!-- =================================================
+                 ESTADO
+            ================================================== -->
 
             <div
                 id="status"
@@ -404,5 +565,4 @@
     <script src="js/app.js"></script>
 
 </body>
-
 </html>

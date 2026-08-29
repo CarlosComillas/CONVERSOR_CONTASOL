@@ -6,6 +6,8 @@ import pandas as pd
 class ExcelReader:
     """Lee y analiza archivos Excel."""
 
+    PREVIEW_ROWS = 25
+
     def __init__(self, file_path: Path):
         self.file_path = file_path
 
@@ -187,6 +189,20 @@ class ExcelReader:
                 sheet_name
             )
 
+            # -----------------------------------------
+            # Detectar cabecera
+            # -----------------------------------------
+
+            header_row = (
+                self.detect_header_row(
+                    sheet_name
+                )
+            )
+
+            # -----------------------------------------
+            # Información de columnas
+            # -----------------------------------------
+
             columns = []
 
             for column in dataframe.columns:
@@ -206,27 +222,110 @@ class ExcelReader:
                 )
 
             # -----------------------------------------
-            # Preview
+            # Nombres de columnas
             # -----------------------------------------
 
-            preview = (
+            column_names = [
+                str(column)
+                for column in dataframe.columns
+            ]
+
+            # -----------------------------------------
+            # Preview
+            # -----------------------------------------
+            #
+            # Mostramos únicamente las primeras
+            # PREVIEW_ROWS filas.
+            #
+            # No enviamos todo el Excel al navegador.
+            # -----------------------------------------
+
+            preview_dataframe = (
                 dataframe
-                .head(5)
+                .head(self.PREVIEW_ROWS)
                 .fillna("")
-                .to_dict(
-                    orient="records"
-                )
             )
+
+            preview = []
+
+            for index, row in preview_dataframe.iterrows():
+
+                # -------------------------------------
+                # Número de fila real del Excel
+                #
+                # header_row = índice 0-based
+                #
+                # Primera fila de datos =
+                # header_row + 2
+                # -------------------------------------
+
+                row_data = {
+                    "_row_number": (
+                        int(index)
+                        + header_row
+                        + 2
+                    )
+                }
+
+                for column in dataframe.columns:
+
+                    value = row[column]
+
+                    # ---------------------------------
+                    # Valores vacíos
+                    # ---------------------------------
+
+                    if pd.isna(value):
+
+                        value = ""
+
+                    # ---------------------------------
+                    # Valores numpy
+                    # ---------------------------------
+
+                    elif hasattr(
+                        value,
+                        "item",
+                    ):
+
+                        try:
+                            value = value.item()
+
+                        except (
+                            ValueError,
+                            AttributeError,
+                        ):
+
+                            value = str(value)
+
+                    # ---------------------------------
+                    # Otros tipos
+                    # ---------------------------------
+
+                    elif not isinstance(
+                        value,
+                        (
+                            str,
+                            int,
+                            float,
+                            bool,
+                            type(None),
+                        ),
+                    ):
+
+                        value = str(value)
+
+                    row_data[
+                        str(column)
+                    ] = value
+
+                preview.append(
+                    row_data
+                )
 
             # -----------------------------------------
             # Información de la hoja
             # -----------------------------------------
-
-            header_row = (
-                self.detect_header_row(
-                    sheet_name
-                )
-            )
 
             sheets.append(
                 {
@@ -236,10 +335,15 @@ class ExcelReader:
                     "columns": len(
                         dataframe.columns
                     ),
+                    "column_names": column_names,
                     "column_details": columns,
                     "preview": preview,
                 }
             )
+
+        # ---------------------------------------------
+        # Resultado final
+        # ---------------------------------------------
 
         return {
             "filename": self.file_path.name,

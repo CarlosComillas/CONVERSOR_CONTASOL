@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -66,39 +67,21 @@ class ExcelReader:
             if not values:
                 continue
 
-            # -----------------------------------------
-            # Número de celdas con contenido
-            # -----------------------------------------
-
             non_empty_count = len(values)
-
-            # -----------------------------------------
-            # Penalizar filas donde predominan números
-            #
-            # Una cabecera normalmente contiene texto.
-            # -----------------------------------------
 
             text_count = 0
 
             for value in values:
 
                 if isinstance(value, str):
+
                     if value.strip():
                         text_count += 1
-
-            # -----------------------------------------
-            # Puntuación
-            # -----------------------------------------
 
             score = (
                 non_empty_count * 10
                 + text_count * 5
             )
-
-            # -----------------------------------------
-            # Preferimos una fila que tenga al menos
-            # dos valores y que contenga texto.
-            # -----------------------------------------
 
             if (
                 non_empty_count >= 2
@@ -112,27 +95,16 @@ class ExcelReader:
         return best_row
 
     # =================================================
-    # LEER HOJA
+    # LIMPIAR DATAFRAME
     # =================================================
 
-    def read_sheet(
+    def _clean_dataframe(
         self,
-        sheet_name: str,
+        dataframe: pd.DataFrame,
     ) -> pd.DataFrame:
         """
-        Lee una hoja concreta detectando
-        automáticamente la fila de cabeceras.
+        Limpia un DataFrame después de leerlo.
         """
-
-        header_row = self.detect_header_row(
-            sheet_name
-        )
-
-        dataframe = pd.read_excel(
-            self.file_path,
-            sheet_name=sheet_name,
-            header=header_row,
-        )
 
         # ---------------------------------------------
         # Eliminar columnas completamente vacías
@@ -175,6 +147,240 @@ class ExcelReader:
         return dataframe
 
     # =================================================
+    # LEER HOJA
+    # =================================================
+
+    def read_sheet(
+        self,
+        sheet_name: str,
+    ) -> pd.DataFrame:
+        """
+        Lee una hoja completa detectando
+        automáticamente la fila de cabeceras.
+        """
+
+        header_row = self.detect_header_row(
+            sheet_name
+        )
+
+        dataframe = pd.read_excel(
+            self.file_path,
+            sheet_name=sheet_name,
+            header=header_row,
+        )
+
+        return self._clean_dataframe(
+            dataframe
+        )
+
+    # =================================================
+    # CONVERTIR VALOR PARA JSON
+    # =================================================
+
+    def _serialize_value(
+        self,
+        value: Any,
+    ) -> Any:
+        """
+        Convierte valores de pandas/numpy a valores
+        compatibles con JSON.
+        """
+
+        if pd.isna(value):
+
+            return ""
+
+        if hasattr(
+            value,
+            "item",
+        ):
+
+            try:
+
+                value = value.item()
+
+            except (
+                ValueError,
+                AttributeError,
+            ):
+
+                value = str(value)
+
+        elif not isinstance(
+            value,
+            (
+                str,
+                int,
+                float,
+                bool,
+                type(None),
+            ),
+        ):
+
+            value = str(value)
+
+        return value
+
+    # =================================================
+    # CONVERTIR FILA
+    # =================================================
+
+    def _serialize_row(
+        self,
+        row: pd.Series,
+        row_number: int,
+        columns: list[str],
+    ) -> dict[str, Any]:
+        """
+        Convierte una fila en un diccionario preparado
+        para enviarlo al frontend.
+        """
+
+        row_data = {
+            "_row_number": row_number
+        }
+
+        for column in columns:
+
+            value = row[column]
+
+            row_data[
+                str(column)
+            ] = self._serialize_value(
+                value
+            )
+
+        return row_data
+
+    # =================================================
+    # PREVIEW PAGINADO
+    # =================================================
+
+    def get_preview(
+        self,
+        sheet_name: str,
+        page: int = 1,
+        page_size: int = 25,
+    ) -> dict:
+        """
+        Devuelve una página concreta de una hoja.
+
+        page:
+            Número de página empezando en 1.
+
+        page_size:
+            Número de filas por página.
+        """
+
+        if page < 1:
+            page = 1
+
+        if page_size < 1:
+            page_size = self.PREVIEW_ROWS
+
+        # Limitar para evitar peticiones exageradas
+        page_size = min(
+            page_size,
+            100,
+        )
+
+        header_row = self.detect_header_row(
+            sheet_name
+        )
+
+        dataframe = self.read_sheet(
+            sheet_name
+        )
+
+        total_rows = len(
+            dataframe
+        )
+
+        total_pages = max(
+            1,
+            (
+                total_rows +
+                page_size -
+                1
+            )
+            // page_size,
+        )
+
+        # Si piden una página inexistente,
+        # devolvemos la última.
+        if page > total_pages:
+            page = total_pages
+
+        start_position = (
+            page - 1
+        ) * page_size
+
+        end_position = min(
+            start_position +
+            page_size,
+            total_rows,
+        )
+
+        page_dataframe = (
+            dataframe
+            .iloc[
+                start_position:end_position
+            ]
+        )
+
+        columns = [
+            str(column)
+            for column
+            in dataframe.columns
+        ]
+
+        rows = []
+
+        for index, row in (
+            page_dataframe.iterrows()
+        ):
+
+            # -----------------------------------------
+            # Número real de fila del Excel
+            #
+            # índice dataframe + fila cabecera + 2
+            # -----------------------------------------
+
+            row_number = (
+                int(index)
+                + header_row
+                + 2
+            )
+
+            rows.append(
+                self._serialize_row(
+                    row,
+                    row_number,
+                    columns,
+                )
+            )
+
+        return {
+            "sheet": sheet_name,
+            "page": page,
+            "page_size": page_size,
+            "total_rows": total_rows,
+            "total_pages": total_pages,
+            "start_row": (
+                rows[0]["_row_number"]
+                if rows
+                else None
+            ),
+            "end_row": (
+                rows[-1]["_row_number"]
+                if rows
+                else None
+            ),
+            "column_names": columns,
+            "rows": rows,
+        }
+
+    # =================================================
     # ANALIZAR
     # =================================================
 
@@ -188,10 +394,6 @@ class ExcelReader:
             dataframe = self.read_sheet(
                 sheet_name
             )
-
-            # -----------------------------------------
-            # Detectar cabecera
-            # -----------------------------------------
 
             header_row = (
                 self.detect_header_row(
@@ -227,101 +429,19 @@ class ExcelReader:
 
             column_names = [
                 str(column)
-                for column in dataframe.columns
+                for column
+                in dataframe.columns
             ]
 
             # -----------------------------------------
-            # Preview
-            # -----------------------------------------
-            #
-            # Mostramos únicamente las primeras
-            # PREVIEW_ROWS filas.
-            #
-            # No enviamos todo el Excel al navegador.
+            # Preview inicial
             # -----------------------------------------
 
-            preview_dataframe = (
-                dataframe
-                .head(self.PREVIEW_ROWS)
-                .fillna("")
+            preview_result = self.get_preview(
+                sheet_name=sheet_name,
+                page=1,
+                page_size=self.PREVIEW_ROWS,
             )
-
-            preview = []
-
-            for index, row in preview_dataframe.iterrows():
-
-                # -------------------------------------
-                # Número de fila real del Excel
-                #
-                # header_row = índice 0-based
-                #
-                # Primera fila de datos =
-                # header_row + 2
-                # -------------------------------------
-
-                row_data = {
-                    "_row_number": (
-                        int(index)
-                        + header_row
-                        + 2
-                    )
-                }
-
-                for column in dataframe.columns:
-
-                    value = row[column]
-
-                    # ---------------------------------
-                    # Valores vacíos
-                    # ---------------------------------
-
-                    if pd.isna(value):
-
-                        value = ""
-
-                    # ---------------------------------
-                    # Valores numpy
-                    # ---------------------------------
-
-                    elif hasattr(
-                        value,
-                        "item",
-                    ):
-
-                        try:
-                            value = value.item()
-
-                        except (
-                            ValueError,
-                            AttributeError,
-                        ):
-
-                            value = str(value)
-
-                    # ---------------------------------
-                    # Otros tipos
-                    # ---------------------------------
-
-                    elif not isinstance(
-                        value,
-                        (
-                            str,
-                            int,
-                            float,
-                            bool,
-                            type(None),
-                        ),
-                    ):
-
-                        value = str(value)
-
-                    row_data[
-                        str(column)
-                    ] = value
-
-                preview.append(
-                    row_data
-                )
 
             # -----------------------------------------
             # Información de la hoja
@@ -330,20 +450,26 @@ class ExcelReader:
             sheets.append(
                 {
                     "name": sheet_name,
-                    "header_row": header_row + 1,
-                    "rows": len(dataframe),
+                    "header_row": (
+                        header_row + 1
+                    ),
+                    "rows": len(
+                        dataframe
+                    ),
                     "columns": len(
                         dataframe.columns
                     ),
-                    "column_names": column_names,
-                    "column_details": columns,
-                    "preview": preview,
+                    "column_names": (
+                        column_names
+                    ),
+                    "column_details": (
+                        columns
+                    ),
+                    "preview": (
+                        preview_result["rows"]
+                    ),
                 }
             )
-
-        # ---------------------------------------------
-        # Resultado final
-        # ---------------------------------------------
 
         return {
             "filename": self.file_path.name,

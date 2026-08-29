@@ -44,24 +44,16 @@ const columnSearch =
     document.getElementById("columnSearch");
 
 const selectAllColumnsButton =
-    document.getElementById(
-        "selectAllColumns"
-    );
+    document.getElementById("selectAllColumns");
 
 const deselectAllColumnsButton =
-    document.getElementById(
-        "deselectAllColumns"
-    );
+    document.getElementById("deselectAllColumns");
 
 const columnSelection =
-    document.getElementById(
-        "columnSelection"
-    );
+    document.getElementById("columnSelection");
 
 const columnSelectionCount =
-    document.getElementById(
-        "columnSelectionCount"
-    );
+    document.getElementById("columnSelectionCount");
 
 
 // =====================================================
@@ -69,69 +61,43 @@ const columnSelectionCount =
 // =====================================================
 
 const excelViewer =
-    document.getElementById(
-        "excelViewer"
-    );
+    document.getElementById("excelViewer");
 
 const viewerDetails =
-    document.getElementById(
-        "viewerDetails"
-    );
+    document.getElementById("viewerDetails");
 
 const viewerSheet =
-    document.getElementById(
-        "viewerSheet"
-    );
+    document.getElementById("viewerSheet");
 
 const excelTable =
-    document.getElementById(
-        "excelTable"
-    );
+    document.getElementById("excelTable");
 
 const excelTableHead =
-    document.getElementById(
-        "excelTableHead"
-    );
+    document.getElementById("excelTableHead");
 
 const excelTableBody =
-    document.getElementById(
-        "excelTableBody"
-    );
+    document.getElementById("excelTableBody");
 
 const selectAllRowsButton =
-    document.getElementById(
-        "selectAllRows"
-    );
+    document.getElementById("selectAllRows");
 
 const deselectAllRowsButton =
-    document.getElementById(
-        "deselectAllRows"
-    );
+    document.getElementById("deselectAllRows");
 
 const rowSelectionCount =
-    document.getElementById(
-        "rowSelectionCount"
-    );
+    document.getElementById("rowSelectionCount");
 
 const viewerPagination =
-    document.getElementById(
-        "viewerPagination"
-    );
+    document.getElementById("viewerPagination");
 
 const previousPageButton =
-    document.getElementById(
-        "previousPage"
-    );
+    document.getElementById("previousPage");
 
 const nextPageButton =
-    document.getElementById(
-        "nextPage"
-    );
+    document.getElementById("nextPage");
 
 const currentPageElement =
-    document.getElementById(
-        "currentPage"
-    );
+    document.getElementById("currentPage");
 
 
 // =====================================================
@@ -139,54 +105,34 @@ const currentPageElement =
 // =====================================================
 
 const transformationsContainer =
-    document.getElementById(
-        "transformationsContainer"
-    );
+    document.getElementById("transformationsContainer");
 
 const addTransformationButton =
-    document.getElementById(
-        "addTransformationButton"
-    );
+    document.getElementById("addTransformationButton");
 
 const transformationForm =
-    document.getElementById(
-        "transformationForm"
-    );
+    document.getElementById("transformationForm");
 
 const transformationType =
-    document.getElementById(
-        "transformationType"
-    );
+    document.getElementById("transformationType");
 
 const transformationColumns =
-    document.getElementById(
-        "transformationColumns"
-    );
+    document.getElementById("transformationColumns");
 
 const transformationColumnsHelp =
-    document.getElementById(
-        "transformationColumnsHelp"
-    );
+    document.getElementById("transformationColumnsHelp");
 
 const transformationOutput =
-    document.getElementById(
-        "transformationOutput"
-    );
+    document.getElementById("transformationOutput");
 
 const cancelTransformationButton =
-    document.getElementById(
-        "cancelTransformationButton"
-    );
+    document.getElementById("cancelTransformationButton");
 
 const saveTransformationButton =
-    document.getElementById(
-        "saveTransformationButton"
-    );
+    document.getElementById("saveTransformationButton");
 
 const transformationsList =
-    document.getElementById(
-        "transformationsList"
-    );
+    document.getElementById("transformationsList");
 
 
 // =====================================================
@@ -214,18 +160,9 @@ let currentSheetIndex = 0;
 
 let currentPage = 1;
 
-/*
-    Las filas se guardan así:
+let currentPreviewRows = [];
 
-    {
-        "0:2": true,
-        "0:3": true,
-        "1:5": true
-    }
-
-    El primer número es el índice de la hoja.
-    El segundo es el número real de fila del Excel.
-*/
+let currentTotalPages = 1;
 
 let selectedRows = {};
 
@@ -239,9 +176,7 @@ async function loadClients() {
     try {
 
         const response =
-            await fetch(
-                "/api/clients"
-            );
+            await fetch("/api/clients");
 
         if (!response.ok) {
 
@@ -256,9 +191,7 @@ async function loadClients() {
         const clients =
             Array.isArray(data)
                 ? data
-                : (
-                    data.clients || []
-                );
+                : (data.clients || []);
 
         clientSelect.innerHTML = `
             <option value="">
@@ -272,9 +205,7 @@ async function loadClients() {
         ) {
 
             const option =
-                document.createElement(
-                    "option"
-                );
+                document.createElement("option");
 
             option.value =
                 client.id;
@@ -282,28 +213,12 @@ async function loadClients() {
             option.textContent =
                 client.name;
 
-            clientSelect.appendChild(
-                option
-            );
-        }
-
-        if (
-            clients.length === 0
-        ) {
-
-            clientSelect.innerHTML = `
-                <option value="">
-                    No hay clientes configurados
-                </option>
-            `;
+            clientSelect.appendChild(option);
         }
 
     } catch (error) {
 
-        console.error(
-            "Error cargando clientes:",
-            error
-        );
+        console.error(error);
 
         clientSelect.innerHTML = `
             <option value="">
@@ -315,7 +230,7 @@ async function loadClients() {
 
 
 // =====================================================
-// CAMBIO DE CLIENTE
+// CLIENTE
 // =====================================================
 
 clientSelect.addEventListener(
@@ -334,15 +249,13 @@ clientSelect.addEventListener(
             return;
         }
 
-        await loadConversions(
-            clientId
-        );
+        await loadConversions(clientId);
     }
 );
 
 
 // =====================================================
-// CAMBIO DE CONVERSIÓN
+// CONVERSION
 // =====================================================
 
 conversionSelect.addEventListener(
@@ -355,7 +268,7 @@ conversionSelect.addEventListener(
 
 
 // =====================================================
-// RESET CONVERSIÓN
+// RESET CONVERSION
 // =====================================================
 
 function resetConversion() {
@@ -425,9 +338,7 @@ async function loadConversions(
         ) {
 
             const option =
-                document.createElement(
-                    "option"
-                );
+                document.createElement("option");
 
             option.value =
                 conversion.id;
@@ -435,42 +346,21 @@ async function loadConversions(
             option.textContent =
                 conversion.name;
 
-            conversionSelect.appendChild(
-                option
-            );
+            conversionSelect.appendChild(option);
         }
 
-        if (
-            data.conversions.length === 0
-        ) {
-
-            conversionSelect.innerHTML = `
-                <option value="">
-                    No hay conversiones configuradas
-                </option>
-            `;
-
-            conversionSelect.disabled =
-                true;
-
-        } else {
-
-            conversionSelect.disabled =
-                false;
-        }
+        conversionSelect.disabled =
+            data.conversions.length === 0;
 
     } catch (error) {
+
+        console.error(error);
 
         conversionSelect.innerHTML = `
             <option value="">
                 Error al cargar conversiones
             </option>
         `;
-
-        conversionSelect.disabled =
-            true;
-
-        console.error(error);
     }
 
     updateButton();
@@ -478,7 +368,7 @@ async function loadConversions(
 
 
 // =====================================================
-// SELECCIÓN DE ARCHIVO
+// SELECCIONAR ARCHIVO
 // =====================================================
 
 selectFileButton.addEventListener(
@@ -512,7 +402,7 @@ fileInput.addEventListener(
 
 uploadArea.addEventListener(
     "dragover",
-    (event) => {
+    event => {
 
         event.preventDefault();
 
@@ -536,7 +426,7 @@ uploadArea.addEventListener(
 
 uploadArea.addEventListener(
     "drop",
-    (event) => {
+    event => {
 
         event.preventDefault();
 
@@ -560,7 +450,9 @@ uploadArea.addEventListener(
 // MANEJAR ARCHIVO
 // =====================================================
 
-async function handleFile(file) {
+async function handleFile(
+    file
+) {
 
     const extension =
         file.name
@@ -613,7 +505,9 @@ async function handleFile(file) {
 // SUBIR ARCHIVO
 // =====================================================
 
-async function uploadFile(file) {
+async function uploadFile(
+    file
+) {
 
     showStatus(
         "Subiendo archivo...",
@@ -664,22 +558,12 @@ async function uploadFile(file) {
 
     } catch (error) {
 
-        uploadedFilename = null;
-
-        excelAnalysis = null;
-
-        selectedColumns = [];
-
-        transformations = [];
-
-        resetViewer();
+        console.error(error);
 
         showStatus(
             `Error: ${error.message}`,
             "error"
         );
-
-        console.error(error);
 
         updateButton();
     }
@@ -687,7 +571,7 @@ async function uploadFile(file) {
 
 
 // =====================================================
-// ANALIZAR EXCEL
+// ANALIZAR
 // =====================================================
 
 async function analyzeFile(
@@ -717,28 +601,18 @@ async function analyzeFile(
         excelAnalysis =
             data;
 
-        showAnalysis(
-            data
-        );
+        showAnalysis(data);
 
         updateButton();
 
     } catch (error) {
 
-        excelAnalysis = null;
-
-        selectedColumns = [];
-
-        transformations = [];
-
-        resetViewer();
+        console.error(error);
 
         showStatus(
             `Error al analizar el Excel: ${error.message}`,
             "error"
         );
-
-        console.error(error);
 
         updateButton();
     }
@@ -749,7 +623,9 @@ async function analyzeFile(
 // MOSTRAR ANÁLISIS
 // =====================================================
 
-function showAnalysis(data) {
+function showAnalysis(
+    data
+) {
 
     const sheets =
         data.sheets || [];
@@ -763,23 +639,25 @@ function showAnalysis(data) {
             "error"
         );
 
-        fileAnalysis.classList.add(
-            "hidden"
-        );
-
         return;
     }
 
     const totalRows =
         sheets.reduce(
-            (total, sheet) =>
+            (
+                total,
+                sheet
+            ) =>
                 total + sheet.rows,
             0
         );
 
     const totalColumns =
         sheets.reduce(
-            (total, sheet) =>
+            (
+                total,
+                sheet
+            ) =>
                 total + sheet.columns,
             0
         );
@@ -800,13 +678,14 @@ function showAnalysis(data) {
 
     currentPage = 1;
 
+    currentPreviewRows = [];
+
+    currentTotalPages = 1;
+
     selectedRows = {};
 
-    const firstSheet =
-        sheets[0];
-
     const columns =
-        firstSheet.column_details || [];
+        sheets[0].column_details || [];
 
     selectedColumns =
         columns
@@ -822,9 +701,7 @@ function showAnalysis(data) {
                     )
             );
 
-    renderColumns(
-        columns
-    );
+    renderColumns(columns);
 
     updateColumnSelectionCount();
 
@@ -840,16 +717,11 @@ function showAnalysis(data) {
         "",
         ""
     );
-
-    console.log(
-        "Análisis del Excel:",
-        data
-    );
 }
 
 
 // =====================================================
-// MOSTRAR COLUMNAS
+// COLUMNAS
 // =====================================================
 
 function renderColumns(
@@ -869,9 +741,7 @@ function renderColumns(
             column => {
 
                 const name =
-                    String(
-                        column.name
-                    );
+                    String(column.name);
 
                 if (
                     name.startsWith(
@@ -890,41 +760,22 @@ function renderColumns(
             }
         );
 
-    if (
-        filteredColumns.length === 0
-    ) {
-
-        columnSelection.innerHTML = `
-            <div class="column-option">
-                No se encontraron columnas.
-            </div>
-        `;
-
-        return;
-    }
-
     for (
         const column
         of filteredColumns
     ) {
 
         const name =
-            String(
-                column.name
-            );
+            String(column.name);
 
         const label =
-            document.createElement(
-                "label"
-            );
+            document.createElement("label");
 
         label.className =
             "column-option";
 
         const checkbox =
-            document.createElement(
-                "input"
-            );
+            document.createElement("input");
 
         checkbox.type =
             "checkbox";
@@ -968,16 +819,14 @@ function renderColumns(
 
                 updateColumnSelectionCount();
 
-                updateViewerColumnHeaders();
+                renderViewer();
 
                 updateButton();
             }
         );
 
         const text =
-            document.createElement(
-                "span"
-            );
+            document.createElement("span");
 
         text.textContent =
             name;
@@ -1009,27 +858,20 @@ columnSearch.addEventListener(
             return;
         }
 
-        const columns =
-            getCurrentSheetColumns();
-
         renderColumns(
-            columns
+            getCurrentSheetColumns()
         );
     }
 );
 
 
 // =====================================================
-// SELECCIONAR TODAS LAS COLUMNAS
+// TODAS LAS COLUMNAS
 // =====================================================
 
 selectAllColumnsButton.addEventListener(
     "click",
     () => {
-
-        if (!excelAnalysis) {
-            return;
-        }
 
         selectedColumns =
             getAvailableColumns();
@@ -1040,7 +882,7 @@ selectAllColumnsButton.addEventListener(
 
         updateColumnSelectionCount();
 
-        updateViewerColumnHeaders();
+        renderViewer();
 
         updateButton();
     }
@@ -1048,16 +890,12 @@ selectAllColumnsButton.addEventListener(
 
 
 // =====================================================
-// DESELECCIONAR TODAS LAS COLUMNAS
+// NINGUNA COLUMNA
 // =====================================================
 
 deselectAllColumnsButton.addEventListener(
     "click",
     () => {
-
-        if (!excelAnalysis) {
-            return;
-        }
 
         selectedColumns = [];
 
@@ -1067,7 +905,7 @@ deselectAllColumnsButton.addEventListener(
 
         updateColumnSelectionCount();
 
-        updateViewerColumnHeaders();
+        renderViewer();
 
         updateButton();
     }
@@ -1075,7 +913,7 @@ deselectAllColumnsButton.addEventListener(
 
 
 // =====================================================
-// CONTADOR DE COLUMNAS
+// CONTADOR COLUMNAS
 // =====================================================
 
 function updateColumnSelectionCount() {
@@ -1084,8 +922,7 @@ function updateColumnSelectionCount() {
         getAvailableColumns().length;
 
     columnSelectionCount.textContent =
-        `${selectedColumns.length} ` +
-        `de ${total} columnas seleccionadas`;
+        `${selectedColumns.length} de ${total} columnas seleccionadas`;
 }
 
 
@@ -1095,25 +932,19 @@ function updateColumnSelectionCount() {
 
 function getAvailableColumns() {
 
-    if (!excelAnalysis) {
-        return [];
-    }
-
-    const currentSheet =
+    const sheet =
         getCurrentSheet();
 
-    if (!currentSheet) {
+    if (!sheet) {
         return [];
     }
 
     return (
-        currentSheet.column_details || []
+        sheet.column_details || []
     )
         .map(
             column =>
-                String(
-                    column.name
-                )
+                String(column.name)
         )
         .filter(
             name =>
@@ -1126,7 +957,7 @@ function getAvailableColumns() {
 
 
 // =====================================================
-// VISOR — HOJAS
+// HOJAS
 // =====================================================
 
 function renderViewerSheets() {
@@ -1142,7 +973,10 @@ function renderViewerSheets() {
         excelAnalysis.sheets || [];
 
     sheets.forEach(
-        (sheet, index) => {
+        (
+            sheet,
+            index
+        ) => {
 
             const option =
                 document.createElement(
@@ -1162,9 +996,7 @@ function renderViewerSheets() {
     );
 
     viewerSheet.value =
-        String(
-            currentSheetIndex
-        );
+        String(currentSheetIndex);
 }
 
 
@@ -1174,7 +1006,7 @@ function renderViewerSheets() {
 
 viewerSheet.addEventListener(
     "change",
-    () => {
+    async () => {
 
         currentSheetIndex =
             Number(
@@ -1183,11 +1015,9 @@ viewerSheet.addEventListener(
 
         currentPage = 1;
 
-        /*
-            No borramos selectedRows.
-            Así podemos seleccionar filas
-            en varias hojas y conservarlas.
-        */
+        currentPreviewRows = [];
+
+        currentTotalPages = 1;
 
         renderColumns(
             getCurrentSheetColumns()
@@ -1195,15 +1025,15 @@ viewerSheet.addEventListener(
 
         updateColumnSelectionCount();
 
-        renderViewer();
-
         renderTransformationColumns();
+
+        await loadPreviewPage();
     }
 );
 
 
 // =====================================================
-// OBTENER HOJA ACTUAL
+// HOJA ACTUAL
 // =====================================================
 
 function getCurrentSheet() {
@@ -1221,7 +1051,7 @@ function getCurrentSheet() {
 
 
 // =====================================================
-// OBTENER COLUMNAS DE HOJA
+// COLUMNAS HOJA ACTUAL
 // =====================================================
 
 function getCurrentSheetColumns() {
@@ -1240,7 +1070,94 @@ function getCurrentSheetColumns() {
 
 
 // =====================================================
-// RENDERIZAR VISOR
+// CARGAR PÁGINA DESDE BACKEND
+// =====================================================
+
+async function loadPreviewPage() {
+
+    if (
+        !uploadedFilename ||
+        !excelAnalysis
+    ) {
+
+        return;
+    }
+
+    const sheet =
+        getCurrentSheet();
+
+    if (!sheet) {
+        return;
+    }
+
+    showStatus(
+        "Cargando filas...",
+        "loading"
+    );
+
+    try {
+
+        const url =
+            `/api/preview/` +
+            `${encodeURIComponent(
+                uploadedFilename
+            )}` +
+            `?sheet=${encodeURIComponent(
+                sheet.name
+            )}` +
+            `&page=${currentPage}` +
+            `&page_size=${PREVIEW_PAGE_SIZE}`;
+
+        const response =
+            await fetch(url);
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.detail ||
+                "No se pudo cargar la página."
+            );
+        }
+
+        currentPreviewRows =
+            data.rows || [];
+
+        currentPage =
+            data.page || currentPage;
+
+        currentTotalPages =
+            data.total_pages || 1;
+
+        renderViewerTable(sheet);
+
+        updateViewerPagination(data);
+
+        updateRowSelectionCount();
+
+        updatePaginationButtons();
+
+        showStatus(
+            "",
+            ""
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showStatus(
+            `Error al cargar las filas: ${error.message}`,
+            "error"
+        );
+    }
+}
+
+
+// =====================================================
+// RENDER VISOR
 // =====================================================
 
 function renderViewer() {
@@ -1261,24 +1178,37 @@ function renderViewer() {
         "hidden"
     );
 
-    renderViewerTable(
-        sheet
-    );
+    if (
+        currentPreviewRows.length === 0 &&
+        currentPage === 1 &&
+        sheet.preview
+    ) {
 
-    updateViewerPagination(
-        sheet
-    );
+        currentPreviewRows =
+            sheet.preview;
+
+        currentTotalPages =
+            Math.max(
+                1,
+                Math.ceil(
+                    sheet.rows /
+                    PREVIEW_PAGE_SIZE
+                )
+            );
+    }
+
+    renderViewerTable(sheet);
+
+    updateViewerPagination();
 
     updateRowSelectionCount();
 
-    updatePaginationButtons(
-        sheet
-    );
+    updatePaginationButtons();
 }
 
 
 // =====================================================
-// RENDERIZAR TABLA
+// TABLA
 // =====================================================
 
 function renderViewerTable(
@@ -1291,34 +1221,11 @@ function renderViewerTable(
     excelTableBody.innerHTML =
         "";
 
-    const preview =
-        sheet.preview || [];
+    const visibleRows =
+        currentPreviewRows || [];
 
     const availableColumns =
         getAvailableColumns();
-
-    // =================================================
-    // PAGINACIÓN SOBRE EL PREVIEW
-    // =================================================
-
-    const startIndex =
-        (
-            currentPage - 1
-        ) *
-        PREVIEW_PAGE_SIZE;
-
-    const endIndex =
-        Math.min(
-            startIndex +
-            PREVIEW_PAGE_SIZE,
-            preview.length
-        );
-
-    const visibleRows =
-        preview.slice(
-            startIndex,
-            endIndex
-        );
 
 
     // =================================================
@@ -1326,24 +1233,18 @@ function renderViewerTable(
     // =================================================
 
     const headerRow =
-        document.createElement(
-            "tr"
-        );
+        document.createElement("tr");
 
 
     const selectHeader =
-        document.createElement(
-            "th"
-        );
+        document.createElement("th");
 
     selectHeader.className =
         "row-checkbox-cell";
 
 
     const selectCheckbox =
-        document.createElement(
-            "input"
-        );
+        document.createElement("input");
 
     selectCheckbox.type =
         "checkbox";
@@ -1389,10 +1290,12 @@ function renderViewerTable(
     );
 
 
+    // =================================================
+    // NÚMERO DE FILA
+    // =================================================
+
     const numberHeader =
-        document.createElement(
-            "th"
-        );
+        document.createElement("th");
 
     numberHeader.className =
         "row-number";
@@ -1406,7 +1309,7 @@ function renderViewerTable(
 
 
     // =================================================
-    // CABECERAS DE COLUMNAS
+    // COLUMNAS
     // =================================================
 
     for (
@@ -1415,45 +1318,24 @@ function renderViewerTable(
     ) {
 
         const th =
-            document.createElement(
-                "th"
-            );
+            document.createElement("th");
 
         th.className =
             "column-header";
 
 
-        if (
-            selectedColumns.includes(
-                column
-            )
-        ) {
-
-            th.classList.add(
-                "selected"
-            );
-        }
-
-
         const content =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         content.className =
             "column-header-content";
 
 
         const checkbox =
-            document.createElement(
-                "input"
-            );
+            document.createElement("input");
 
         checkbox.type =
             "checkbox";
-
-        checkbox.className =
-            "column-header-checkbox";
 
         checkbox.checked =
             selectedColumns.includes(
@@ -1505,7 +1387,7 @@ function renderViewerTable(
 
                 updateColumnSelectionCount();
 
-                updateViewerColumnHeaders();
+                renderViewer();
 
                 updateButton();
             }
@@ -1513,9 +1395,7 @@ function renderViewerTable(
 
 
         const text =
-            document.createElement(
-                "span"
-            );
+            document.createElement("span");
 
         text.textContent =
             column;
@@ -1529,26 +1409,10 @@ function renderViewerTable(
             text
         );
 
+
         th.appendChild(
             content
         );
-
-
-        th.addEventListener(
-            "click",
-            () => {
-
-                checkbox.checked =
-                    !checkbox.checked;
-
-                checkbox.dispatchEvent(
-                    new Event(
-                        "change"
-                    )
-                );
-            }
-        );
-
 
         headerRow.appendChild(
             th
@@ -1571,9 +1435,7 @@ function renderViewerTable(
     ) {
 
         const tr =
-            document.createElement(
-                "tr"
-            );
+            document.createElement("tr");
 
         const rowNumber =
             row._row_number;
@@ -1592,22 +1454,18 @@ function renderViewerTable(
 
 
         // ---------------------------------------------
-        // CHECKBOX
+        // CHECKBOX FILA
         // ---------------------------------------------
 
         const checkboxCell =
-            document.createElement(
-                "td"
-            );
+            document.createElement("td");
 
         checkboxCell.className =
             "row-checkbox-cell";
 
 
         const rowCheckbox =
-            document.createElement(
-                "input"
-            );
+            document.createElement("input");
 
         rowCheckbox.type =
             "checkbox";
@@ -1654,13 +1512,11 @@ function renderViewerTable(
 
 
         // ---------------------------------------------
-        // NÚMERO DE FILA
+        // NÚMERO
         // ---------------------------------------------
 
         const numberCell =
-            document.createElement(
-                "td"
-            );
+            document.createElement("td");
 
         numberCell.className =
             "row-number";
@@ -1683,9 +1539,7 @@ function renderViewerTable(
         ) {
 
             const td =
-                document.createElement(
-                    "td"
-                );
+                document.createElement("td");
 
             let value =
                 row[column];
@@ -1706,7 +1560,6 @@ function renderViewerTable(
             td.title =
                 String(value);
 
-
             tr.appendChild(
                 td
             );
@@ -1721,33 +1574,23 @@ function renderViewerTable(
 
 
 // =====================================================
-// ACTUALIZAR VISOR
-// =====================================================
-
-function updateViewerColumnHeaders() {
-
-    const sheet =
-        getCurrentSheet();
-
-    if (!sheet) {
-        return;
-    }
-
-    renderViewer();
-}
-
-
-// =====================================================
-// SELECCIÓN DE FILAS
+// SELECCIÓN FILAS
 // =====================================================
 
 function getRowKey(
     rowNumber
 ) {
 
+    const sheet =
+        getCurrentSheet();
+
+    const sheetName =
+        sheet
+            ? sheet.name
+            : currentSheetIndex;
+
     return (
-        `${currentSheetIndex}:` +
-        `${rowNumber}`
+        `${sheetName}::${rowNumber}`
     );
 }
 
@@ -1791,7 +1634,7 @@ function deselectRow(
 
 
 // =====================================================
-// SELECCIONAR FILAS ACTUALES
+// SELECCIONAR PÁGINA
 // =====================================================
 
 function selectCurrentPageRows(
@@ -1847,25 +1690,15 @@ function areAllCurrentPageRowsSelected(
 
 
 // =====================================================
-// BOTONES DE FILAS
+// BOTONES FILAS
 // =====================================================
 
 selectAllRowsButton.addEventListener(
     "click",
     () => {
 
-        const sheet =
-            getCurrentSheet();
-
-        if (!sheet) {
-            return;
-        }
-
-        const preview =
-            sheet.preview || [];
-
         selectCurrentPageRows(
-            preview
+            currentPreviewRows
         );
 
         renderViewer();
@@ -1879,18 +1712,8 @@ deselectAllRowsButton.addEventListener(
     "click",
     () => {
 
-        const sheet =
-            getCurrentSheet();
-
-        if (!sheet) {
-            return;
-        }
-
-        const preview =
-            sheet.preview || [];
-
         deselectCurrentPageRows(
-            preview
+            currentPreviewRows
         );
 
         renderViewer();
@@ -1901,7 +1724,7 @@ deselectAllRowsButton.addEventListener(
 
 
 // =====================================================
-// CONTADOR DE FILAS
+// CONTADOR FILAS
 // =====================================================
 
 function getSelectedRowsCount() {
@@ -1914,11 +1737,8 @@ function getSelectedRowsCount() {
 
 function updateRowSelectionCount() {
 
-    const count =
-        getSelectedRowsCount();
-
     rowSelectionCount.textContent =
-        `${count} fila(s) seleccionada(s)`;
+        `${getSelectedRowsCount()} fila(s) seleccionada(s)`;
 }
 
 
@@ -1928,7 +1748,7 @@ function updateRowSelectionCount() {
 
 previousPageButton.addEventListener(
     "click",
-    () => {
+    async () => {
 
         if (
             currentPage <= 1
@@ -1939,32 +1759,18 @@ previousPageButton.addEventListener(
 
         currentPage--;
 
-        renderViewer();
+        await loadPreviewPage();
     }
 );
 
 
 nextPageButton.addEventListener(
     "click",
-    () => {
-
-        const sheet =
-            getCurrentSheet();
-
-        if (!sheet) {
-            return;
-        }
-
-        const totalPages =
-            Math.ceil(
-                (
-                    sheet.preview || []
-                ).length /
-                PREVIEW_PAGE_SIZE
-            );
+    async () => {
 
         if (
-            currentPage >= totalPages
+            currentPage >=
+            currentTotalPages
         ) {
 
             return;
@@ -1972,77 +1778,77 @@ nextPageButton.addEventListener(
 
         currentPage++;
 
-        renderViewer();
+        await loadPreviewPage();
     }
 );
 
 
+// =====================================================
+// INFORMACIÓN PAGINACIÓN
+// =====================================================
+
 function updateViewerPagination(
-    sheet
+    data = null
 ) {
 
-    const rows =
-        sheet.preview || [];
-
     const totalRows =
-        rows.length;
-
-
-    const start =
-        totalRows === 0
-            ? 0
+        data
+            ? data.total_rows
             : (
-                (currentPage - 1) *
-                PREVIEW_PAGE_SIZE
-            ) + 1;
-
-
-    const end =
-        Math.min(
-            currentPage *
-            PREVIEW_PAGE_SIZE,
-            totalRows
-        );
-
-
-    viewerPagination.textContent =
-        `Mostrando ${start}–${end} ` +
-        `de ${totalRows} filas`;
-
-
-    viewerDetails.textContent =
-        `Vista previa de las primeras ` +
-        `${totalRows} filas de la hoja.`;
-}
-
-
-function updatePaginationButtons(
-    sheet
-) {
-
-    const totalRows =
-        (
-            sheet.preview || []
-        ).length;
+                getCurrentSheet()
+                    ?.rows || 0
+            );
 
 
     const totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                totalRows /
-                PREVIEW_PAGE_SIZE
-            )
-        );
+        data
+            ? data.total_pages
+            : currentTotalPages;
 
+
+    const startRow =
+        data?.start_row || null;
+
+    const endRow =
+        data?.end_row || null;
+
+
+    if (
+        startRow !== null &&
+        endRow !== null
+    ) {
+
+        viewerPagination.textContent =
+            `Mostrando ${startRow}–${endRow} ` +
+            `de ${totalRows} filas`;
+
+    } else {
+
+        viewerPagination.textContent =
+            `Página ${currentPage} ` +
+            `de ${totalPages} · ` +
+            `${totalRows} filas`;
+    }
+
+
+    viewerDetails.textContent =
+        `Vista previa de la hoja ` +
+        `"${getCurrentSheet()?.name || ""}".`;
+}
+
+
+// =====================================================
+// BOTONES PAGINACIÓN
+// =====================================================
+
+function updatePaginationButtons() {
 
     previousPageButton.disabled =
         currentPage <= 1;
 
-
     nextPageButton.disabled =
-        currentPage >= totalPages;
-
+        currentPage >=
+        currentTotalPages;
 
     currentPageElement.textContent =
         currentPage;
@@ -2058,6 +1864,10 @@ function resetViewer() {
     currentSheetIndex = 0;
 
     currentPage = 1;
+
+    currentPreviewRows = [];
+
+    currentTotalPages = 1;
 
     selectedRows = {};
 
@@ -2075,7 +1885,7 @@ function resetViewer() {
         "";
 
     viewerPagination.textContent =
-        "Mostrando 0 filas";
+        "Página 1 de 1";
 
     rowSelectionCount.textContent =
         "0 filas seleccionadas";
@@ -2092,83 +1902,79 @@ function resetViewer() {
 
 
 // =====================================================
-// OBTENER FILAS SELECCIONADAS POR HOJA
+// FILAS SELECCIONADAS POR HOJA
 // =====================================================
 
 function getSelectedRowsBySheet() {
 
     const result = {};
 
-    if (!excelAnalysis) {
-        return result;
-    }
-
-
-    const sheets =
-        excelAnalysis.sheets || [];
-
-
     for (
-        let sheetIndex = 0;
-        sheetIndex < sheets.length;
-        sheetIndex++
+        const key
+        of Object.keys(
+            selectedRows
+        )
     ) {
 
-        const sheet =
-            sheets[sheetIndex];
+        const separatorIndex =
+            key.lastIndexOf("::");
 
-        const rows = [];
+        if (
+            separatorIndex === -1
+        ) {
 
-        const prefix =
-            `${sheetIndex}:`;
+            continue;
+        }
 
+        const sheetName =
+            key.substring(
+                0,
+                separatorIndex
+            );
 
-        for (
-            const key
-            of Object.keys(
-                selectedRows
+        const rowNumber =
+            Number(
+                key.substring(
+                    separatorIndex + 2
+                )
+            );
+
+        if (
+            !Number.isInteger(
+                rowNumber
             )
         ) {
 
-            if (
-                key.startsWith(
-                    prefix
-                )
-            ) {
-
-                const rowNumber =
-                    Number(
-                        key.substring(
-                            prefix.length
-                        )
-                    );
-
-
-                if (
-                    Number.isInteger(
-                        rowNumber
-                    )
-                ) {
-
-                    rows.push(
-                        rowNumber
-                    );
-                }
-            }
+            continue;
         }
-
 
         if (
-            rows.length > 0
+            !result[sheetName]
         ) {
 
-            result[
-                sheet.name
-            ] = rows.sort(
-                (a, b) =>
-                    a - b
-            );
+            result[sheetName] = [];
         }
+
+        result[sheetName].push(
+            rowNumber
+        );
+    }
+
+
+    for (
+        const sheetName
+        of Object.keys(
+            result
+        )
+    ) {
+
+        result[sheetName].sort(
+            (
+                a,
+                b
+            ) =>
+                a - b
+        );
     }
 
 
@@ -2193,15 +1999,12 @@ function renderTransformations() {
         return;
     }
 
-
     transformationsContainer.classList.remove(
         "hidden"
     );
 
-
     transformationsList.innerHTML =
         "";
-
 
     if (
         transformations.length === 0
@@ -2216,7 +2019,6 @@ function renderTransformations() {
         return;
     }
 
-
     for (
         let index = 0;
         index < transformations.length;
@@ -2226,29 +2028,20 @@ function renderTransformations() {
         const transformation =
             transformations[index];
 
-
         const card =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         card.className =
             "transformation-card";
 
-
         const header =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         header.className =
             "transformation-card-header";
 
-
         const title =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         title.className =
             "transformation-card-title";
@@ -2256,11 +2049,8 @@ function renderTransformations() {
         title.textContent =
             transformation.output;
 
-
         const removeButton =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
         removeButton.type =
             "button";
@@ -2270,7 +2060,6 @@ function renderTransformations() {
 
         removeButton.textContent =
             "Eliminar";
-
 
         removeButton.addEventListener(
             "click",
@@ -2287,7 +2076,6 @@ function renderTransformations() {
             }
         );
 
-
         header.appendChild(
             title
         );
@@ -2296,15 +2084,11 @@ function renderTransformations() {
             removeButton
         );
 
-
         const operation =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         operation.className =
             "transformation-card-operation";
-
 
         operation.textContent =
             `${getOperationLabel(
@@ -2314,7 +2098,6 @@ function renderTransformations() {
                 " + "
             )}`;
 
-
         card.appendChild(
             header
         );
@@ -2322,7 +2105,6 @@ function renderTransformations() {
         card.appendChild(
             operation
         );
-
 
         transformationsList.appendChild(
             card
@@ -2332,7 +2114,7 @@ function renderTransformations() {
 
 
 // =====================================================
-// NOMBRE DE OPERACIÓN
+// LABEL OPERACIÓN
 // =====================================================
 
 function getOperationLabel(
@@ -2350,7 +2132,6 @@ function getOperationLabel(
         divide: "Dividir"
 
     };
-
 
     return (
         labels[operation] ||
@@ -2392,7 +2173,7 @@ cancelTransformationButton.addEventListener(
 
 
 // =====================================================
-// CAMBIAR TIPO
+// TIPO TRANSFORMACIÓN
 // =====================================================
 
 transformationType.addEventListener(
@@ -2405,7 +2186,7 @@ transformationType.addEventListener(
 
 
 // =====================================================
-// COLUMNAS PARA TRANSFORMACIÓN
+// COLUMNAS TRANSFORMACIÓN
 // =====================================================
 
 function renderTransformationColumns() {
@@ -2413,15 +2194,12 @@ function renderTransformationColumns() {
     transformationColumns.innerHTML =
         "";
 
-
     if (!excelAnalysis) {
         return;
     }
 
-
     const numericColumns =
         getNumericColumns();
-
 
     if (
         numericColumns.length === 0
@@ -2436,25 +2214,19 @@ function renderTransformationColumns() {
         return;
     }
 
-
     for (
         const column
         of numericColumns
     ) {
 
         const label =
-            document.createElement(
-                "label"
-            );
+            document.createElement("label");
 
         label.className =
             "transformation-column-option";
 
-
         const checkbox =
-            document.createElement(
-                "input"
-            );
+            document.createElement("input");
 
         checkbox.type =
             "checkbox";
@@ -2462,15 +2234,11 @@ function renderTransformationColumns() {
         checkbox.value =
             column.name;
 
-
         const text =
-            document.createElement(
-                "span"
-            );
+            document.createElement("span");
 
         text.textContent =
             column.name;
-
 
         label.appendChild(
             checkbox
@@ -2480,15 +2248,13 @@ function renderTransformationColumns() {
             text
         );
 
-
         transformationColumns.appendChild(
             label
         );
     }
 
-
     transformationColumnsHelp.textContent =
-        "Solo se muestran columnas numéricas, compatibles con esta operación.";
+        "Solo se muestran columnas numéricas compatibles con esta operación.";
 }
 
 
@@ -2498,32 +2264,22 @@ function renderTransformationColumns() {
 
 function getNumericColumns() {
 
-    if (!excelAnalysis) {
-        return [];
-    }
-
-
     const sheet =
         getCurrentSheet();
-
 
     if (!sheet) {
         return [];
     }
 
-
-    const columns =
-        sheet.column_details || [];
-
-
-    return columns.filter(
+    return (
+        sheet.column_details || []
+    ).filter(
         column => {
 
             const dtype =
                 String(
                     column.dtype || ""
                 ).toLowerCase();
-
 
             return (
                 dtype.includes("int") ||
@@ -2546,41 +2302,35 @@ saveTransformationButton.addEventListener(
         const operation =
             transformationType.value;
 
-
         const checkboxes =
             transformationColumns
                 .querySelectorAll(
                     "input[type='checkbox']:checked"
                 );
 
-
         const columns =
             Array.from(
                 checkboxes
-            )
-                .map(
-                    checkbox =>
-                        checkbox.value
-                );
-
+            ).map(
+                checkbox =>
+                    checkbox.value
+            );
 
         const output =
             transformationOutput.value
                 .trim();
-
 
         if (
             columns.length < 2
         ) {
 
             showStatus(
-                "Selecciona al menos dos columnas para la transformación.",
+                "Selecciona al menos dos columnas.",
                 "error"
             );
 
             return;
         }
-
 
         if (!output) {
 
@@ -2589,11 +2339,8 @@ saveTransformationButton.addEventListener(
                 "error"
             );
 
-            transformationOutput.focus();
-
             return;
         }
-
 
         if (
             getAvailableColumns()
@@ -2607,30 +2354,8 @@ saveTransformationButton.addEventListener(
                 "error"
             );
 
-            transformationOutput.focus();
-
             return;
         }
-
-
-        if (
-            transformations.some(
-                transformation =>
-                    transformation.output ===
-                    output
-            )
-        ) {
-
-            showStatus(
-                "Ya existe una transformación con ese nombre.",
-                "error"
-            );
-
-            transformationOutput.focus();
-
-            return;
-        }
-
 
         transformations.push({
 
@@ -2642,16 +2367,13 @@ saveTransformationButton.addEventListener(
 
             output:
                 output
-
         });
-
 
         resetTransformationForm();
 
         renderTransformations();
 
         updateButton();
-
 
         showStatus(
             "Transformación añadida correctamente.",
@@ -2662,7 +2384,7 @@ saveTransformationButton.addEventListener(
 
 
 // =====================================================
-// RESET FORMULARIO TRANSFORMACIÓN
+// RESET TRANSFORMACIÓN
 // =====================================================
 
 function resetTransformationForm() {
@@ -2691,22 +2413,17 @@ function updateButton() {
     const clientSelected =
         clientSelect.value !== "";
 
-
     const conversionSelected =
         conversionSelect.value !== "";
-
 
     const fileSelected =
         selectedFile !== null;
 
-
     const fileAnalyzed =
         excelAnalysis !== null;
 
-
     const columnsSelected =
         selectedColumns.length > 0;
-
 
     convertButton.disabled = !(
         clientSelected &&
@@ -2736,36 +2453,30 @@ convertButton.addEventListener(
             return;
         }
 
-
         convertButton.disabled =
             true;
 
-
         convertButton.textContent =
             "Convirtiendo...";
-
 
         showStatus(
             "Preparando la conversión...",
             "loading"
         );
 
-
         try {
 
             // =========================================
-            // 1. SUBIR ARCHIVO
+            // SUBIR
             // =========================================
 
             const formData =
                 new FormData();
 
-
             formData.append(
                 "file",
                 selectedFile
             );
-
 
             const uploadResponse =
                 await fetch(
@@ -2775,7 +2486,6 @@ convertButton.addEventListener(
                         body: formData
                     }
                 );
-
 
             if (
                 !uploadResponse.ok
@@ -2788,29 +2498,25 @@ convertButton.addEventListener(
                             () => null
                         );
 
-
                 throw new Error(
                     errorData?.detail ||
                     "No se pudo subir el archivo."
                 );
             }
 
-
             const uploadData =
                 await uploadResponse.json();
 
 
             // =========================================
-            // 2. PREPARAR DATOS
+            // PARÁMETROS
             // =========================================
 
             const clientId =
                 clientSelect.value;
 
-
             const conversionId =
                 conversionSelect.value;
-
 
             const selectedColumnsParam =
                 encodeURIComponent(
@@ -2819,14 +2525,12 @@ convertButton.addEventListener(
                     )
                 );
 
-
             const selectedRowsParam =
                 encodeURIComponent(
                     JSON.stringify(
                         getSelectedRowsBySheet()
                     )
                 );
-
 
             const transformationsParam =
                 encodeURIComponent(
@@ -2837,7 +2541,7 @@ convertButton.addEventListener(
 
 
             // =========================================
-            // 3. CONSTRUIR URL
+            // URL
             // =========================================
 
             const convertUrl =
@@ -2857,14 +2561,13 @@ convertButton.addEventListener(
 
 
             // =========================================
-            // 4. CONVERTIR
+            // CONVERTIR
             // =========================================
 
             showStatus(
                 "Convirtiendo archivo...",
                 "loading"
             );
-
 
             const convertResponse =
                 await fetch(
@@ -2873,7 +2576,6 @@ convertButton.addEventListener(
                         method: "POST"
                     }
                 );
-
 
             if (
                 !convertResponse.ok
@@ -2886,7 +2588,6 @@ convertButton.addEventListener(
                             () => null
                         );
 
-
                 throw new Error(
                     errorData?.detail ||
                     "No se pudo convertir el archivo."
@@ -2895,75 +2596,59 @@ convertButton.addEventListener(
 
 
             // =========================================
-            // 5. DESCARGAR
+            // DESCARGAR
             // =========================================
 
             const blob =
                 await convertResponse.blob();
-
 
             const downloadUrl =
                 window.URL.createObjectURL(
                     blob
                 );
 
-
             const link =
-                document.createElement(
-                    "a"
-                );
-
+                document.createElement("a");
 
             link.href =
                 downloadUrl;
 
-
             link.download =
                 `CONTASOL_${uploadData.filename}`;
-
 
             document.body.appendChild(
                 link
             );
 
-
             link.click();
 
-
             link.remove();
-
 
             window.URL.revokeObjectURL(
                 downloadUrl
             );
-
 
             showStatus(
                 "✓ Conversión completada. El archivo se ha descargado.",
                 "success"
             );
 
-
         } catch (error) {
 
             console.error(error);
-
 
             showStatus(
                 `Error: ${error.message}`,
                 "error"
             );
 
-
         } finally {
 
             convertButton.disabled =
                 false;
 
-
             convertButton.textContent =
                 "Convertir a CONTASOL";
-
 
             updateButton();
         }
@@ -2972,7 +2657,7 @@ convertButton.addEventListener(
 
 
 // =====================================================
-// MENSAJES
+// STATUS
 // =====================================================
 
 function showStatus(
@@ -2992,19 +2677,15 @@ function showStatus(
         return;
     }
 
-
     status.classList.remove(
         "hidden"
     );
 
-
     status.textContent =
         message;
 
-
     status.className =
         "status";
-
 
     if (type) {
 
